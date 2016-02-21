@@ -12,9 +12,9 @@ function QMLFlow(meta) {
     this.layoutDirectionChanged.connect(this, this.layoutChildren);
     this.widthChanged.connect(this, this.layoutChildren);
     this.implicitWidthChanged.connect(this, this.layoutChildren);
-
+  
     this.flow = this.Flow.LeftToRight;
-    this.layoutDirection = 0;
+    this.layoutDirection = 0 ;
 }
 
 QMLFlow.prototype.layoutChildren = function() {
@@ -24,22 +24,24 @@ QMLFlow.prototype.layoutChildren = function() {
     var children = [];
     var child    =  undefined;
     var QMLRepeater = getConstructor('QtQuick', '2.0', 'Repeater');
-
-    for (var key in this.children) {
-        var child = this.children[key];
-        if (child instanceof QMLRepeater) {
-            children = children.concat(child.children);
-        } else {
-            children.push(child);
-        }
+    
+    for (var key in this.children){
+        child = this.children[key];    
+         
+        if ( child instanceof QMLRepeater) {
+             children = children.concat(child.children);
+         }
+         else{
+             children.push(child);   
+         }
     }
-
+    
     if (children.length == 0) return;
-
+ 
     var flowWidth = this.$isUsingImplicitWidth ? this.implicitWidth : this.width;
     var flowHeight = this.$isUsingImplicitHeight ? this.implicitHeight : this.height;
-
-    for (var i = 0; i < children.length; i++) {
+    
+    for (var i=0;i < children.length;i++) {
         child = children[i];
         childHeight = child.$isUsingImplicitHeight ? child.implicitHeight : child.height;
         childWidth = child.$isUsingImplicitWidth ? child.implicitWidth : child.width;
@@ -73,7 +75,7 @@ QMLFlow.prototype.layoutChildren = function() {
             curVPos += childHeight + this.spacing;
         }
     }
-
+    
     if (this.$isUsingImplicitHeight)
         this.implicitHeight = curVPos + rowSize;
 
