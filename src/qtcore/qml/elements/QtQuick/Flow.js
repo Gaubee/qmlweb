@@ -21,25 +21,15 @@ QMLFlow.prototype.layoutChildren = function() {
     var curHPos = 0,
         curVPos = 0,
         rowSize = 0;
-    var children = [];
-    var child    =  undefined;
-    var QMLRepeater = getConstructor('QtQuick', '2.0', 'Repeater');
-
-    for (var key in this.children) {
-        var child = this.children[key];
-        if (child instanceof QMLRepeater) {
-            children = children.concat(child.children);
-        } else {
-            children.push(child);
-        }
-    }
+    var children = this.children;
+    var child    = undefined;
 
     if (children.length == 0) return;
-
+ 
     var flowWidth = this.$isUsingImplicitWidth ? this.implicitWidth : this.width;
     var flowHeight = this.$isUsingImplicitHeight ? this.implicitHeight : this.height;
-
-    for (var i = 0; i < children.length; i++) {
+    
+    for (var i=0;i < children.length;i++) {
         child = children[i];
         childHeight = child.$isUsingImplicitHeight ? child.implicitHeight : child.height;
         childWidth = child.$isUsingImplicitWidth ? child.implicitWidth : child.width;
@@ -55,8 +45,7 @@ QMLFlow.prototype.layoutChildren = function() {
             }
             rowSize = childHeight > rowSize ? childHeight : rowSize;
 
-            child.x = this.layoutDirection == 1
-                    ? flowWidth - curHPos - childWidth : curHPos;
+            child.x = this.layoutDirection == 1 ? flowWidth - curHPos - childWidth : curHPos;
             child.y = curVPos;
             curHPos += childWidth + this.spacing;
         } else {
@@ -67,13 +56,12 @@ QMLFlow.prototype.layoutChildren = function() {
             }
             rowSize = childWidth > rowSize ? childWidth : rowSize;
 
-            child.x = this.layoutDirection == 1
-                    ? flowWidth - curHPos - childWidth : curHPos;
+            child.x = this.layoutDirection == 1 ? flowWidth - curHPos - childWidth : curHPos;
             child.y = curVPos;
             curVPos += childHeight + this.spacing;
         }
     }
-
+    
     if (this.$isUsingImplicitHeight)
         this.implicitHeight = curVPos + rowSize;
 
