@@ -1,12 +1,11 @@
 let calcOneLineTextWidth;
 (function() {
-  const {
-    getComputedStyle
-  } = window;
-  if (getComputedStyle) {
-    const canvas = document.createElement("canvas");
+  const canvas = document.createElement("canvas");
+  if (canvas.getContext) {
     const ctx = canvas.getContext("2d");
-    const defaultHeight = ctx.measureText("A").width;
+    if (!ctx.measureText) {
+      return;
+    }
     const getStyle = (node, cssKey) => {
       let cur_node = node;
       while (!(cur_node.style && cur_node.style[cssKey])) {
@@ -31,7 +30,7 @@ let calcOneLineTextWidth;
       } = ctx.measureText(text);
       return {
         width,
-        height: parseFloat(style_info[1]) || defaultHeight
+        height: parseFloat(style_info[1])
       };
     };
   }
@@ -72,6 +71,8 @@ QmlWeb.registerQmlType({
     fc.style.whiteSpace = "pre";
     this.dom.style.textAlign = "left";
     this.dom.appendChild(fc);
+
+    this.font.initDomStyle();
 
     this.colorChanged.connect(this, this.$onColorChanged);
     this.textChanged.connect(this, this.$onTextChanged);

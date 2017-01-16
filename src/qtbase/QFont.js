@@ -33,6 +33,13 @@ class QFont extends QmlWeb.QObject {
     this.weightChanged.connect(this, this.$onWidthChanged);
     this.wordSpacingChanged.connect(this, this.$onWordSpacingChanged);
   }
+  initDomStyle() {
+    // set initialValue to style;
+    this.$onCapitalizationChanged(this.capitalization);
+    this.$onFamilyChanged(this.family);
+    this.$onPixelSizeChanged(this.pixelSize);
+    this.$onWidthChanged(this.weight);
+  }
   $onBoldChanged(newVal) {
     const Font = this.Font;
     this.weight = newVal ? Font.Bold : Font.Normal;
