@@ -1,3 +1,42 @@
+let calcOneLineTextWidth;
+(function() {
+  const {
+    getComputedStyle
+  } = window;
+  if (getComputedStyle) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    const defaultHeight = ctx.measureText("A").width;
+    const getStyle = (node, cssKey) => {
+      let cur_node = node;
+      while (!(cur_node.style && cur_node.style[cssKey])) {
+        cur_node = cur_node.parentNode;
+        if (!cur_node) {
+          break;
+        }
+      }
+      return (cur_node || document.body).style[cssKey];
+    };
+    calcOneLineTextWidth = function(impl) {
+      const text = impl.textContent;
+      const style_info = [
+        getStyle(impl, "fontStyle"),
+        getStyle(impl, "fontSize"),
+        getStyle(impl, "fontVariant"),
+        getStyle(impl, "fontWeight")
+      ];
+      ctx.font = style_info.join(" ");
+      const {
+        width
+      } = ctx.measureText(text);
+      return {
+        width,
+        height: parseFloat(style_info[1]) || defaultHeight
+      };
+    };
+  }
+}());
+
 QmlWeb.registerQmlType({
   module: "QtQuick",
   name: "Text",
@@ -120,13 +159,44 @@ QmlWeb.registerQmlType({
       return;
     }
 
+    const fc = this.impl;
+
+    // Try faster calculation method
+    if (calcOneLineTextWidth) {
+      const parent_node = fc;
+      let node;
+      if (parent_node.childNodes.length === 1) {
+        const first_child = parent_node.childNodes[0];
+
+        if (first_child.nodeType === 3) {
+          // <span>just text</span>
+          node = parent_node;
+        } else if (first_child.nodeType === 1 &&
+          first_child.childNodes.length === 1 &&
+          first_child.childNodes[0].nodeType === 3) {
+          // <span><b>simple wrap</b></span>
+          node = first_child;
+        }
+      }
+      if (node) {
+        const {
+          width,
+          height
+        } = calcOneLineTextWidth(node);
+
+        this.implicitHeight = height;
+        this.implicitWidth = width;
+        return;
+      }
+    }
+
+    // Use the standard calculation method
     if (!this.$isUsingImplicitWidth) {
-      this.implicitWidth = this.impl.offsetWidth;
-      this.implicitHeight = this.impl.offsetHeight;
+      this.implicitWidth = fc.offsetWidth;
+      this.implicitHeight = fc.offsetHeight;
       return;
     }
 
-    const fc = this.impl;
     const engine = QmlWeb.engine;
     // Need to move the child out of it's parent so that it can properly
     // recalculate it's "natural" offsetWidth/offsetHeight
