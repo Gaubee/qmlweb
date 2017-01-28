@@ -1,5 +1,5 @@
 function QMLNumber(val) {
-  return +val;
+	return +val;
 }
 QMLNumber.plainType = true;
 QmlWeb.qmlNumber = QMLNumber;

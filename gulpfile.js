@@ -22,6 +22,17 @@ const qtcoreSources = [
   "src/modules/**/*.js"
 ];
 
+const qmlpixiSources = [
+  "src/QmlWeb.js",
+  "src/qtbase/QObject.js",
+  "src/qtbase/*.js",
+  "src/modules/QtQml/Qt.js",
+  "src/engine/QML*.js",
+  "src/engine/*.js",
+  "src/modules/QtQml/*.js",
+  "src/modules/PIXI/**/*.js"
+];
+
 const parserSources = [
   "node_modules/qmlweb-parser/lib/*"
 ];
@@ -94,6 +105,26 @@ gulp.task("qmlweb-dev", () =>
     .pipe(sourcemaps.write("./"))
     .pipe(gulp.dest("./lib"))
 );
+
+gulp.task("qmlpixi-dev", () =>
+  gulp.src(qmlpixiSources)
+    .pipe(order(qmlpixiSources, { base: __dirname }))
+    .pipe(sourcemaps.init())
+    .pipe(concat("qmlpixi.js"))
+    .pipe(changed("./lib"))
+    // .pipe(babel())
+    // .pipe(replace(/"use strict";/g, ""))
+    .pipe(iife({
+      useStrict: false,
+      params: ["global"],
+      args: ["typeof global != \"undefined\" ? global : window"]
+    }))
+    .pipe(sourcemaps.write("./"))
+    .pipe(gulp.dest("./lib"))
+);
+gulp.task("watch-qmlpixi", ["qmlpixi-dev"], () => {
+  gulp.watch(qmlpixiSources, ["qmlpixi-dev"]);
+});
 
 gulp.task("qmlweb", ["qmlweb-dev"], () =>
   gulp.src("./lib/qt.js")

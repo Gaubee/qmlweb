@@ -64,6 +64,11 @@ class QColor {
     this.$string = `#${argb.join("")}`;
     return `#${argb.join("")}`;
   }
+  get $number() {
+    if (this.$numberValue != undefined) return this.$numberValue;
+    this.$numberValue = (this.$r * 255 << 16) + (this.$g * 255 << 8) + this.$b * 255;
+    return this.$numberValue;
+  }
   get $css() {
     if (this.$cssValue) return this.$cssValue;
     if (this.$a === 1) {
@@ -92,22 +97,22 @@ class QColor {
   }
   set r(r) {
     this.$r = r;
-    this.$string = this.$cssValue = null;
+    this.$string = this.$cssValue = this.$numberValue = null;
     this.$changed.execute();
   }
   set g(g) {
     this.$g = g;
-    this.$string = this.$cssValue = null;
+    this.$string = this.$cssValue = this.$numberValue = null;
     this.$changed.execute();
   }
   set b(b) {
     this.$b = b;
-    this.$string = this.$cssValue = null;
+    this.$string = this.$cssValue = this.$numberValue = null;
     this.$changed.execute();
   }
   set a(a) {
     this.$a = a;
-    this.$string = this.$cssValue = null;
+    this.$string = this.$cssValue = this.$numberValue = null;
     this.$changed.execute();
   }
   get hsvHue() {

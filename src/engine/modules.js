@@ -13,7 +13,8 @@ const modules = {
     enum: QmlWeb.qmlNumber,
     url: QmlWeb.qmlUrl,
     variant: QmlWeb.qmlVariant,
-    var: QmlWeb.qmlVariant
+    var: QmlWeb.qmlVariant,
+    AnchorLine: QmlWeb.qmlNumber
   }
 };
 
@@ -238,6 +239,32 @@ function callSuper(self, meta) {
   }
 }
 
+function initQmlType(self, meta) {
+  const info = meta.super.$qmlTypeInfo || {};
+    if (info.enums) {
+    // TODO: not exported to the whole file scope yet
+    Object.keys(info.enums).forEach(name => {
+      self[name] = info.enums[name];
+
+      if (!global[name]) {
+        global[name] = self[name]; // HACK
+      }
+    });
+  }
+  if (info.properties) {
+    QmlWeb.createProperties(self, info.properties);
+  }
+  if (info.signals) {
+    Object.keys(info.signals).forEach(name => {
+      const params = info.signals[name];
+      self[name] = QmlWeb.Signal.signal(params);
+    });
+  }
+  if (info.defaultProperty) {
+    self.$defaultProperty = info.defaultProperty;
+  }
+}
+
 /**
  * QML Object constructor.
  * @param {Object} meta Meta information about the object and the creation
@@ -336,3 +363,4 @@ QmlWeb.getConstructor = getConstructor;
 QmlWeb.loadImports = loadImports;
 QmlWeb.callSuper = callSuper;
 QmlWeb.construct = construct;
+QmlWeb.initQmlType = initQmlType;

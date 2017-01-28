@@ -6,7 +6,7 @@ class QMLProperty {
     this.binding = null;
     this.objectScope = null;
     this.componentScope = null;
-    this.value = undefined;
+    this.val = undefined;
     this.type = type;
     this.animation = null;
     this.needsUpdate = true;
@@ -15,6 +15,12 @@ class QMLProperty {
     // It is needed when deleting, as we need to tidy up all references to this
     // object.
     this.$tidyupList = [];
+  }
+  setter(newVal){
+    this.val = newVal
+  }
+  getter(){
+    return this.val
   }
 
   // Called by update and set to actually set this.val, performing any type
@@ -30,34 +36,34 @@ class QMLProperty {
     } else if (val instanceof QmlWeb.QMLMetaElement) {
       const QMLComponent = QmlWeb.getConstructor("QtQml", "2.0", "Component");
       if (constructors[val.$class] === QMLComponent ||
-          constructors[this.type] === QMLComponent) {
-        this.val = new QMLComponent({
+        constructors[this.type] === QMLComponent) {
+        this.setter(new QMLComponent({
           object: val,
           parent: this.obj,
           context: componentScope
-        });
+        }));
         /* $basePath must be set here so that Components that are assigned to
          * properties (e.g. Repeater delegates) can properly resolve child
          * Components that live in the same directory in
          * Component.createObject. */
         this.val.$basePath = componentScope.$basePath;
       } else {
-        this.val = QmlWeb.construct({
+        this.setter(QmlWeb.construct({
           object: val,
           parent: this.obj,
           context: componentScope
-        });
+        }));
       }
     } else if (!constructors[this.type]) {
-      this.val = val;
+      this.setter(val);
     } else if (constructors[this.type].requireParent) {
-      this.val = new constructors[this.type](this.obj, val);
+      this.setter(new constructors[this.type](this.obj, val));
     } else if (val instanceof Object || val === undefined || val === null) {
-      this.val = val;
+      this.setter(val);
     } else if (constructors[this.type].plainType) {
-      this.val = constructors[this.type](val);
+      this.setter(constructors[this.type](val));
     } else {
-      this.val = new constructors[this.type](val);
+      this.setter(new constructors[this.type](val));
     }
     if (this.val && this.val.$changed) {
       this.val.$changed.connect(() => {
@@ -93,9 +99,11 @@ class QMLProperty {
       this.$setVal(this.binding.eval(this.objectScope, this.componentScope,
         this.componentScopeBasePath), this.componentScope);
     } catch (e) {
-      console.log("QMLProperty.update binding error:",
+      console.error("QMLProperty.update binding error:",
         e,
-        Function.prototype.toString.call(this.binding.eval)
+        '\n-------\n',
+        Function.prototype.toString.call(this.binding.eval),
+        '\n-------'
       );
     } finally {
       QMLProperty.popEvaluatingProperty();
@@ -135,7 +143,7 @@ class QMLProperty {
       );
     }
 
-    return this.val;
+    return this.getter();
   }
   // Define setter
   set(newVal, reason, objectScope, componentScope) {

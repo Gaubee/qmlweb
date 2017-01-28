@@ -6,6 +6,7 @@ env:
   node: true
 globals:
   QmlWeb: true
+  PIXI: true
   global: false
 rules:
   accessor-pairs: 2
