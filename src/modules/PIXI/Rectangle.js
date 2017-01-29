@@ -13,6 +13,14 @@ class Rectangle extends Graphics {
 				initialValue: 0
 			}
 		});
+		QmlWeb.createProperties(this, {
+			radius: "real",
+			radiusTopLeft: "real",
+			radiusTopRight: "real",
+			radiusBottomLeft: "real",
+			radiusBottomRight: "real",
+		});
+
 		this.border.widthChanged.connect(this, this.$reDrawWH);
 		this.border.colorChanged.connect(this, this.$reDrawWH);
 		this.colorChanged.connect(this, this.$reDrawWH);
