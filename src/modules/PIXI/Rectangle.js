@@ -68,10 +68,10 @@ class Rectangle extends Graphics {
 		this.widthChanged.connect(this, this.$reDrawWH);
 		this.heightChanged.connect(this, this.$reDrawWH);
 
-		this.leftChanged.connect(this, this.$reDrawXY);
-		this.topChanged.connect(this, this.$reDrawXY);
-		this.rightChanged.connect(this, this.$reDrawXYWithWH);
-		this.bottomChanged.connect(this, this.$reDrawXYWithWH);
+		this.xChanged.connect(this, this.$reDrawXY);
+		this.yChanged.connect(this, this.$reDrawXY);
+		// this.rightChanged.connect(this, this.$reDrawXYWithWH);
+		// this.bottomChanged.connect(this, this.$reDrawXYWithWH);
 
 		this.effect_border_values = {
 			_: null, // The discarded value
@@ -266,15 +266,8 @@ class Rectangle extends Graphics {
 		this.$resetRB();
 		QmlWeb.nextTickWithId(() => {
 			// console.log('left:', this.left, 'top:', this.top)
-			this.dom.position.set(this.left, this.top);
+			this.dom.position.set(this.x, this.y);
 		}, `${this.$uid}|reDrawXY`);
-	}
-	$reDrawXYWithWH() {
-		// this.$resetRB();
-		// QmlWeb.nextTickWithId(() => {
-		// 	console.log('left:', this.left, 'top:', this.top, 'width:', this.width, 'height:', this.height)
-		// 	this.dom.position.set(this.left - this.width, this.top - this.height);
-		// }, `${this.$uid}|reDrawXYWithWH`);
 	}
 	$resetRB() {
 		// this.right = this.left + this.width;

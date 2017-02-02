@@ -44,14 +44,12 @@ QmlWeb.registerPixiType({
     this.renderer.resize(width, height);
   }
   $onChildrensChanged(newData) {
-    const childrens = [];
     const container = this.stage;
     newData.map(node => {
-      node.parent = this;
       if (node.dom instanceof PIXI.DisplayObject && node.dom.parent !== container) {
-        childrens.push(node.dom);
+        container.addChild(node.dom);
+        node.parent = this;
       }
     })
-    container.addChild(...childrens);
   }
 });

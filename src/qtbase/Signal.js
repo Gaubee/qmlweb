@@ -115,7 +115,7 @@ class Signal {
   static $execute(desc, args) {
     try {
       desc.slot.apply(desc.thisObj, args);
-    } catch (err) {debugger
+    } catch (err) {
       console.error("Signal slot error:",err/*, err.message, err,
         Function.prototype.toString.call(desc.slot)*/
       );

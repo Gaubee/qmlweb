@@ -2,7 +2,8 @@ class Container extends PixiObject {
   constructor(meta) {
     super(meta);
     this.childrensChanged.connect(this, this.$onChildrensChanged);
-    QmlWeb.initQmlType(this, meta);
+    this.parentChanged.connect(this, this.$onChildrensChanged);
+    // QmlWeb.initQmlType(this, meta);
     this.dom = new PIXI.Container();
     const LifecycleKeys = [
       // "onChanges",
@@ -24,7 +25,7 @@ class Container extends PixiObject {
         return signal;
       });
     });
-    this.Lifecycle = PixiLifecycle;
+    this.Lifecycle = this.events = PixiLifecycle;
   }
   updateGeometry() {
     const bounds = this.dom.getLocalBounds();
@@ -34,15 +35,15 @@ class Container extends PixiObject {
     this.y = bounds.y;
   }
   $onChildrensChanged(newData) {
-    const childrens = [];
-    const container = this.dom;
-    newData.map(node => {
-      node.parent = this;
-      if (node.dom instanceof PIXI.DisplayObject && node.dom.parent !== container) {
-        childrens.push(node.dom);
-      }
-    })
-    container.addChild(...childrens);
+    if (this.dom.parent) {
+      const container = this.dom;
+      this.childrens.map(node => {
+        if (node.dom instanceof PIXI.DisplayObject && node.dom.parent !== container) {
+          container.addChild(node.dom);
+          node.parent = this;
+        }
+      });
+    }
   }
 }
 

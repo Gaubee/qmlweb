@@ -2,7 +2,9 @@ class QMLProperty {
   constructor(type, obj, name) {
     this.obj = obj;
     this.name = name;
-    this.changed = QmlWeb.Signal.signal([], { obj });
+    this.changed = QmlWeb.Signal.signal([], {
+      obj
+    });
     this.binding = null;
     this.objectScope = null;
     this.componentScope = null;
@@ -16,10 +18,10 @@ class QMLProperty {
     // object.
     this.$tidyupList = [];
   }
-  setter(newVal){
+  setter(newVal) {
     this.val = newVal
   }
-  getter(){
+  getter() {
     return this.val
   }
 
@@ -126,26 +128,26 @@ class QMLProperty {
 
   // Define getter
   get() {
-    //if (this.needsUpdate && !QMLProperty.evaluatingPropertyPaused) {
-    if (this.needsUpdate &&
+      //if (this.needsUpdate && !QMLProperty.evaluatingPropertyPaused) {
+      if (this.needsUpdate &&
         QmlWeb.engine.operationState !== QmlWeb.QMLOperationState.Init) {
-      this.update();
-    }
+        this.update();
+      }
 
-    // If this call to the getter is due to a property that is dependant on this
-    // one, we need it to take track of changes
-    if (QMLProperty.evaluatingProperty) {
-      //console.log(this,QMLProperty.evaluatingPropertyStack.slice(0),this.val);
-      this.changed.connect(
-        QMLProperty.evaluatingProperty,
-        QMLProperty.prototype.update,
-        QmlWeb.Signal.UniqueConnection
-      );
-    }
+      // If this call to the getter is due to a property that is dependant on this
+      // one, we need it to take track of changes
+      if (QMLProperty.evaluatingProperty) {
+        //console.log(this,QMLProperty.evaluatingPropertyStack.slice(0),this.val);
+        this.changed.connect(
+          QMLProperty.evaluatingProperty,
+          QMLProperty.prototype.update,
+          QmlWeb.Signal.UniqueConnection
+        );
+      }
 
-    return this.getter();
-  }
-  // Define setter
+      return this.getter();
+    }
+    // Define setter
   set(newVal, reason, objectScope, componentScope) {
     const oldVal = this.val;
 
@@ -176,7 +178,7 @@ class QMLProperty {
         return;
       }
     } else {
-      if (reason !== QMLProperty.ReasonAnimation) {
+      if (reason !== QMLProperty.ReasonAnimation && reason !== QMLProperty.ReasonInner) {
         this.binding = null;
       }
       if (val instanceof Array) {
@@ -204,7 +206,7 @@ class QMLProperty {
         this.animation.running = true;
       }
       if (this.obj.$syncPropertyToRemote instanceof Function &&
-          reason === QMLProperty.ReasonUser) {
+        reason === QMLProperty.ReasonUser) {
         // is a remote object from e.g. a QWebChannel
         this.obj.$syncPropertyToRemote(this.name, val);
       } else {
@@ -219,7 +221,7 @@ class QMLProperty {
     );
     QMLProperty.evaluatingPropertyStack = [];
     QMLProperty.evaluatingProperty = undefined;
-  //  console.log("evaluatingProperty=>undefined due to push stck ");
+    //  console.log("evaluatingProperty=>undefined due to push stck ");
   }
 
   static popEvalStack() {
@@ -237,8 +239,7 @@ class QMLProperty {
     // entering update again.
     if (QMLProperty.evaluatingPropertyStack.indexOf(prop) >= 0) {
       console.error("Property binding loop detected for property",
-        prop.name,
-        [prop].slice(0)
+        prop.name, [prop].slice(0)
       );
     }
     QMLProperty.evaluatingProperty = prop;
@@ -275,5 +276,6 @@ QMLProperty.typeInitialValues = {
 QMLProperty.ReasonUser = 0;
 QMLProperty.ReasonInit = 1;
 QMLProperty.ReasonAnimation = 2;
+QMLProperty.ReasonInner = 3;
 
 QmlWeb.QMLProperty = QMLProperty;
