@@ -102,14 +102,33 @@ class Image extends Container {
 			fillMode: "enum"
 		});
 		const $htmlImage = this.$htmlImage = document.createElement("img");
+		// canvas image can't Cross-domain, so can load the picture use ajax directly.
+		const $request = this.$request = new XMLHttpRequest();
+		$request.responseType = 'arraybuffer';
+		$request.onload = (e) => {
+			var blob = new Blob([$request.response]);
+			$htmlImage.src = window.URL.createObjectURL(blob);
+			// Texture.from(HTMLImageElement) vs BaseTexture.fromImage(src)
+			const texture = PIXI.Texture.from($htmlImage);
+			if (texture.baseTexture.hasLoaded) {
+				// console.log("%chasLoaded", "color:red;background-color:yellow")
+				this.$afterSourceChanged(texture);
+			} else {
+				// console.log("%cisLoading", "color:red;background-color:yellow")
+				texture.baseTexture.once("loaded", () => {
+					this.$afterSourceChanged(texture)
+				});
+			}
+		};
+		$request.onprogress = (e) => {
+			this.progress = e.loaded / e.total;
+		};
+		$request.onloadstart = () => {
+			this.progress = 0;
+		};
+
 		const $sprite = this.$sprite = PIXI.Sprite.from($htmlImage);
 		this.dom.addChild($sprite);
-
-		console.log(this.width, this.$properties.width)
-		this.$properties.width.setter = function setter(newVal) {
-			console.log('width changed', newVal);
-			this.val = newVal
-		}
 
 		const LifecycleKeys = [
 			"progress",
@@ -123,9 +142,15 @@ class Image extends Container {
 			QmlWeb.delayInitProperty(PixiLifecycle, signal_key, (obj, signal_key) => {
 				const signal = new Signal([], {
 					obj: this
-				})
+				});
 				switch (signal_key) {
-					default: $htmlImage.addEventListener(signal_key, signal.signal);
+					case "progress":
+					case "loadstart":
+					case "loadend":
+						$request.addEventListener(signal_key, signal.signal)
+						break;
+					default:
+						$htmlImage.addEventListener(signal_key, signal.signal);
 				}
 				return signal;
 			});
@@ -139,30 +164,22 @@ class Image extends Container {
 
 	}
 	$onSourceChanged(newVal) {
-		console.log('src changed', newVal);
-		this.$htmlImage.src = newVal;
-		const texture = PIXI.Texture.from(this.$htmlImage);
-		this.$sprite.setTexture(texture);
-		if (texture.baseTexture.hasLoaded) {
-			this.$afterSourceChanged();
-		} else {
-			texture.baseTexture.once("loaded", this.$afterSourceChanged.bind(this))
-		}
+		const $request = this.$request;
+		$request.abort()
+		$request.open('GET', newVal, true);
+		$request.send();
 	}
-	$afterSourceChanged() {
+	$afterSourceChanged(texture) {
+		this.$sprite.setTexture(texture);
 		this.$onHtmlImageLoad(0, 1); // reset width height 
 		this.$getImgWH = null; // force reDraw
 		this.$onFillModeChanged(); // reset $getImgWH and reDraw 
 	}
 	$onHtmlImageLoad(e, prevent_draw) {
-		console.log("load");
 		const $htmlImage = this.$htmlImage;
 		this.paintedWidth = this.width = $htmlImage.width;
 		this.paintedHeight = this.height = $htmlImage.height;
 		prevent_draw || this.$reDrawWH();
-	}
-	$onHtmlImageProgress(e) {
-		console.log("progress")
 	}
 	$reDrawWH() {
 		const $sprite = this.$sprite;
