@@ -68,11 +68,6 @@ class Rectangle extends Graphics {
 		this.widthChanged.connect(this, this.$reDrawWH);
 		this.heightChanged.connect(this, this.$reDrawWH);
 
-		this.xChanged.connect(this, this.$reDrawXY);
-		this.yChanged.connect(this, this.$reDrawXY);
-		// this.rightChanged.connect(this, this.$reDrawXYWithWH);
-		// this.bottomChanged.connect(this, this.$reDrawXYWithWH);
-
 		this.effect_border_values = {
 			_: null, // The discarded value
 			_cache_value: "",
@@ -100,7 +95,6 @@ class Rectangle extends Graphics {
 		this.radiusBottomRightChanged.connect(this, this.$onRaduisChanged);
 	}
 	$reDrawWH() {
-		this.$resetRB();
 		QmlWeb.nextTickWithId(() => {
 			const width = this.width;
 			const height = this.height;
@@ -261,17 +255,6 @@ class Rectangle extends Graphics {
 			graphics.endFill();
 
 		}, `${this.$uid}|reDrawWH`);
-	}
-	$reDrawXY() {
-		this.$resetRB();
-		QmlWeb.nextTickWithId(() => {
-			// console.log('left:', this.left, 'top:', this.top)
-			this.dom.position.set(this.x, this.y);
-		}, `${this.$uid}|reDrawXY`);
-	}
-	$resetRB() {
-		// this.right = this.left + this.width;
-		// this.bottom = this.top + this.height;
 	}
 	$onRaduisChanged(newVal, oldVal, name) {
 		const effect_border_values = this.effect_border_values;

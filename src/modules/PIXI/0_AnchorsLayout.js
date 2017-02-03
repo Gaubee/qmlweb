@@ -291,8 +291,10 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 		} else {
 			[
 				"width",
+				"x",
 				"left",
 				"height",
+				"y",
 				"top",
 			].forEach(key => u[key] = null)
 		}
@@ -332,7 +334,9 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 		} else {
 			[
 				"left",
+				"x",
 				"top",
+				"y",
 			].forEach(key => u[key] = null)
 		}
 		this.$updateAnchorsGetter(u);

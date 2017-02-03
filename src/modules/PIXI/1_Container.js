@@ -3,14 +3,8 @@ class Container extends PixiObject {
     super(meta);
     this.childrensChanged.connect(this, this.$onChildrensChanged);
     this.parentChanged.connect(this, this.$onChildrensChanged);
-    // QmlWeb.initQmlType(this, meta);
     this.dom = new PIXI.Container();
     const LifecycleKeys = [
-      // "onChanges",
-      // "onInit",
-      // "afterContentInit",
-      // "afterViewInit",
-      // "onDestroy"
       "init"
     ]
     const PixiLifecycle = {};
@@ -26,6 +20,10 @@ class Container extends PixiObject {
       });
     });
     this.Lifecycle = this.events = PixiLifecycle;
+
+    // change position
+    this.xChanged.connect(this, this.$reDrawXY);
+    this.yChanged.connect(this, this.$reDrawXY);
   }
   updateGeometry() {
     const bounds = this.dom.getLocalBounds();
@@ -44,6 +42,12 @@ class Container extends PixiObject {
         }
       });
     }
+  }
+  $reDrawXY() {
+    QmlWeb.nextTickWithId(() => {
+      // console.log('left:', this.left, 'top:', this.top)
+      this.dom.position.set(this.x, this.y);
+    }, `${this.$uid}|reDrawXY`);
   }
 }
 
