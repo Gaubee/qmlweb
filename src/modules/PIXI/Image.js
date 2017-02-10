@@ -164,16 +164,6 @@ class Image extends Container {
 		const $request = this.$request;
 		$request.abort();
 	}
-	$reDrawBG() {
-		QmlWeb.nextTickWithId(() => {
-			const color_dom = this.$bg_color_dom;
-			color_dom.clear();
-			const color = this.color;
-			color_dom.beginFill(color.$number, color.$a);
-			color_dom.drawRect(0, 0, this.width, this.height);
-			color_dom.endFill();
-		}, `${this.$uid}|reDrawBG`);
-	}
 	$onColorChanged(newColor) {
 		const color_dom = this.$bg_color_dom;
 		if (!color_dom) {
@@ -216,9 +206,9 @@ class Image extends Container {
 	}
 	$afterSourceChanged(texture) {
 		this.$sprite.setTexture(texture);
-		this.$onHtmlImageLoad(0, 1); // reset width height 
+		this.$setSourceSize(); // reset width height 
 	}
-	$onHtmlImageLoad(e, prevent_draw) {
+	$setSourceSize() {
 		const $htmlImage = this.$htmlImage;
 		const source = this.source;
 		const {
@@ -239,56 +229,68 @@ class Image extends Container {
 				source.$properties[key].changed(newVal, oldVal, key)
 			}
 		});
-		prevent_draw || this.$reDrawWH();
+	}
+	$reDrawBG() {
+		QmlWeb.nextTickWithId(() => {
+			const color_dom = this.$bg_color_dom;
+			color_dom.clear();
+			const color = this.color;
+			color_dom.beginFill(color.$number, color.$a);
+			color_dom.drawRect(0, 0, this.width, this.height);
+			color_dom.endFill();
+		}, `${this.$uid}|reDrawBG`);
 	}
 	$reDrawTileWH() {
-		debugger
-		const $sprite = this.$sprite;
-		const {
-			width: paintedWidth,
-			height: paintedHeight,
-		} = this.painted;
+		QmlWeb.nextTickWithId(() => {
+			const $sprite = this.$sprite;
+			const {
+				width: paintedWidth,
+				height: paintedHeight,
+			} = this.painted;
 
-		const {
-			width: sourceWidth,
-			height: sourceHeight,
-		} = this.source;
-		console.log(paintedWidth / sourceWidth, paintedHeight / sourceHeight)
-		$sprite.tileScale.set(paintedWidth / sourceWidth, paintedHeight / sourceHeight);
+			const {
+				width: sourceWidth,
+				height: sourceHeight,
+			} = this.source;
+			$sprite.tileScale.set(paintedWidth / sourceWidth, paintedHeight / sourceHeight);
+		}, `${this.$uid}|reDrawTileWH`);
 	}
 	$reDrawWH() {
-		const $sprite = this.$sprite;
-		const container = this.dom;
-		const {
-			width,
-			height,
-			$repeat_x,
-			$repeat_y
-		} = this;
-		const spriteWidth = $repeat_x ? width : this.painted.width;
-		const spriteHeight = $repeat_y ? height : this.painted.height;
-		if (width < 0) {
-			if (container.width > 0) {
-				container.width = -container.width;
+		QmlWeb.nextTickWithId(() => {
+			const $sprite = this.$sprite;
+			const container = this.dom;
+			const color_dom = this.$bg_color_dom || {};
+			const {
+				width,
+				height,
+				$repeat_x,
+				$repeat_y
+			} = this;
+			const spriteWidth = $repeat_x ? width : this.painted.width;
+			const spriteHeight = $repeat_y ? height : this.painted.height;
+			if (width < 0) {
+				if (container.width > 0) {
+					color_dom.width = container.width = -container.width;
+				}
+				$sprite.width = -spriteWidth;
+			} else {
+				if (container.width < 0) {
+					color_dom.width = container.width = -container.width
+				}
+				$sprite.width = spriteWidth;
 			}
-			$sprite.width = -spriteWidth;
-		} else {
-			if (container.width < 0) {
-				container.width = -container.width
+			if (height < 0) {
+				if (container.height > 0) {
+					color_dom.height = container.height = -container.height;
+				}
+				$sprite.height = -spriteHeight;
+			} else {
+				if (container.height < 0) {
+					color_dom.height = container.height = -container.height
+				}
+				$sprite.height = spriteHeight;
 			}
-			$sprite.width = spriteWidth;
-		}
-		if (height < 0) {
-			if (container.height > 0) {
-				container.height = -container.height;
-			}
-			$sprite.height = -spriteHeight;
-		} else {
-			if (container.height < 0) {
-				container.height = -container.height
-			}
-			$sprite.height = spriteHeight;
-		}
+		}, `${this.$uid}|reDrawWH`);
 	}
 	get $src_ratio() {
 		const baseTexture = this.$sprite.texture.baseTexture;
