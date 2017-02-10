@@ -432,7 +432,7 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 		effect_anchors[name] = newVal
 	};
 
-	const anchors_lock_setter = () => console.log("anchor lockd!");
+	const anchors_lock_setter = () => {/*console.log("anchor lockd!")*/};
 	exports.$updateAnchorsGetter = function(u) {
 		const effect_anchors = this.effect_anchors;
 		for (const key in u) {

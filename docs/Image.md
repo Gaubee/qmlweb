@@ -15,8 +15,8 @@
 * source.ratio : Number : 只读，图片的宽高比
 * width : Number : 元素的宽度
 * height : Number : 元素的高度
-* painted.width : Size : 单位图片（从图片起点到完整图片绘制的终点）的宽度
-* painted.height : Size : 单位图片的高度
+* painted.width : Number : 单位图片（从图片起点到完整图片绘制的终点）的宽度，默认返回width
+* painted.height : Number : 单位图片的高度，默认返回height
 * painted.ratio : Number : 只读，单位图片宽高比
 * progress : Number : 图片加载的进度0~1
 
@@ -32,3 +32,4 @@
 * onLoad : 在资源成功加载并渲染的时候触发
 * onAbort: 在资源加载被中断的时候触发
 * onError: 在资源加载出错的时候触发
+* onProgress : 同onProgressChanged监听progress属性的变动

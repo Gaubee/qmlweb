@@ -94,13 +94,105 @@ const FILLMODE_IMAGE_DRAW_CALC = [
 class Image extends Container {
 	constructor(meta) {
 		super(meta);
+		const self = this;
 		QmlWeb.createProperties(this, {
-			paintedHeight: "real",
-			paintedWidth: "real",
 			progress: "real",
-			source: "url",
-			fillMode: "enum"
+			src: "url",
+			color: "color",
+			fillMode: "enum",
 		});
+		/** repeat
+		 * Array
+		 */
+		this.$repeat_x = this.$repeat_y = true;
+		QmlWeb.createProperty("var", this, "repeat", {
+			setter(newVal) {
+				if (self.$onSetRepeat(newVal)) {
+					const newVal = this.val = [self.$repeat_x, self.$repeat_y];
+				}
+			}
+		});
+		const repeat_prop = this.$properties.repeat;
+		repeat_prop.val = [this.$repeat_x, this.$repeat_y];
+
+		/** source
+		 * source.width/height/ratio/url
+		 */
+		const source = new QmlWeb.QObject(this);;
+		QmlWeb.setupGetter(this, "source", () => source);
+		[
+			["url", "url", ""],
+			["real", "ratio", 0],
+			["real", "width", 0],
+			["real", "height", 0],
+		].forEach((info, i) => {
+			const [type, key, default_val] = info;
+			const getter_key = `__${key}`;
+			source[getter_key] = default_val;
+			QmlWeb.createProperty(type, source, key, {
+				getter: () => source[getter_key],
+				setter: function(newVal) {
+					throw new TypeError(`Cannot assign to read-only property "source.${key}"`);
+				}
+			});
+			if (i > 1) { // width/height
+				const prop = source.$properties[key];
+				prop.changed.connect(this, this.$reDrawTileWH);
+			}
+		});
+		/** painted
+		 * painted.width/height/ratio
+		 */
+		const painted = new QmlWeb.QObject(this);
+		QmlWeb.setupGetter(this, "painted", () => painted);
+		QmlWeb.createProperties(painted, {
+			width: {
+				type: "var",
+				getter: function() {
+					if (!isFinite(this.val)) {
+						return self.width
+					}
+					return this.val
+				}
+			},
+			height: {
+				type: "var",
+				getter: function() {
+					if (!isFinite(this.val)) {
+						return self.height
+					}
+					return this.val
+				}
+			},
+			ratio: {
+				type: "real",
+				getter: () => {
+					const ratio = painted.width / painted.height;
+					if (!isFinite(ratio)) {
+						return 0
+					}
+					return ratio;
+				},
+				setter: () => {
+					throw new TypeError(`Cannot assign to read-only property "painted.ratio"`);
+				}
+			}
+		});
+		const painted_props = painted.$properties;
+		["width", "height"].forEach(key => {
+			const prop = painted_props[key]
+			this[`${key}Changed`].connect((newVal, oldVal) => {
+				if (newVal !== prop.val) {
+					prop.changed(newVal, oldVal, key);
+				}
+			});
+			prop.changed.connect(painted_props.ratio.changed);
+			prop.changed.connect(this, this.$reDrawTileWH);
+		});
+
+		/** Code:Loader and Sripte
+		 *
+		 */
 		const $htmlImage = this.$htmlImage = document.createElement("img");
 		// canvas image can't Cross-domain, so can load the picture use ajax directly.
 		const $request = this.$request = new XMLHttpRequest();
@@ -111,10 +203,8 @@ class Image extends Container {
 			// Texture.from(HTMLImageElement) vs BaseTexture.fromImage(src)
 			const texture = PIXI.Texture.from($htmlImage);
 			if (texture.baseTexture.hasLoaded) {
-				// console.log("%chasLoaded", "color:red;background-color:yellow")
 				this.$afterSourceChanged(texture);
 			} else {
-				// console.log("%cisLoading", "color:red;background-color:yellow")
 				texture.baseTexture.once("loaded", () => {
 					this.$afterSourceChanged(texture)
 				});
@@ -127,14 +217,19 @@ class Image extends Container {
 			this.progress = 0;
 		};
 
-		const $sprite = this.$sprite = PIXI.Sprite.from($htmlImage);
+		const $sprite = this.$sprite = PIXI.extras.TilingSprite.from($htmlImage);
 		this.dom.addChild($sprite);
 
+		/** Lifecycle
+		 *
+		 */
 		const LifecycleKeys = [
+			"load",
+
 			"progress",
 			"loadstart",
 			"loadend",
-			"load",
+			"abort",
 			"error",
 		]
 		const PixiLifecycle = this.Lifecycle;
@@ -144,24 +239,71 @@ class Image extends Container {
 					obj: this
 				});
 				switch (signal_key) {
-					case "progress":
-					case "loadstart":
-					case "loadend":
-						$request.addEventListener(signal_key, signal.signal)
+					case "load":
+						$htmlImage.addEventListener(signal_key, signal.signal);
 						break;
 					default:
-						$htmlImage.addEventListener(signal_key, signal.signal);
+						$request.addEventListener(signal_key, signal.signal)
 				}
 				return signal;
 			});
 		});
 
-		this.sourceChanged.connect(this, this.$onSourceChanged);
+		this.colorChanged.connect(this, this.$onColorChanged);
+		this.srcChanged.connect(this, this.$onSourceChanged);
 		this.widthChanged.connect(this, this.$reDrawWH);
 		this.heightChanged.connect(this, this.$reDrawWH);
 		this.fillModeChanged.connect(this, this.$onFillModeChanged);
 		this.$getImgWH = FILLMODE_IMAGE_DRAW_CALC[0];
 
+	}
+	abort() {
+		const $request = this.$request;
+		$request.abort();
+	}
+	$reDrawBG() {
+		QmlWeb.nextTickWithId(() => {
+			const color_dom = this.$bg_color_dom;
+			color_dom.clear();
+			const color = this.color;
+			color_dom.beginFill(color.$number, color.$a);
+			color_dom.drawRect(0, 0, this.width, this.height);
+			color_dom.endFill();
+		}, `${this.$uid}|reDrawBG`);
+	}
+	$onColorChanged(newColor) {
+		const color_dom = this.$bg_color_dom;
+		if (!color_dom) {
+			this.$bg_color_dom = new PIXI.Graphics();
+			this.dom.addChildAt(this.$bg_color_dom, 0);
+			this.widthChanged.connect(this, this.$reDrawBG);
+			this.heightChanged.connect(this, this.$reDrawBG);
+		}
+		this.$reDrawBG();
+	}
+	$onSetRepeat(newVal) {
+		let repeat_x,
+			repeat_y;
+		if (newVal instanceof Array) {
+			[repeat_x, repeat_y] = newVal;
+		} else {
+			repeat_x = repeat_y = newVal;
+		}
+		repeat_x = !!repeat_x;
+		repeat_y = !!repeat_y;
+		let changed = false;
+		if (repeat_x !== this.$repeat_x) {
+			this.$repeat_x = repeat_x;
+			changed = true;
+		}
+		if (repeat_y !== this.$repeat_y) {
+			this.$repeat_y = repeat_y;
+			changed = true;
+		}
+		if (changed) {
+			this.$reDrawWH()
+		}
+		return changed;
 	}
 	$onSourceChanged(newVal) {
 		const $request = this.$request;
@@ -177,9 +319,41 @@ class Image extends Container {
 	}
 	$onHtmlImageLoad(e, prevent_draw) {
 		const $htmlImage = this.$htmlImage;
-		this.paintedWidth = this.width = $htmlImage.width;
-		this.paintedHeight = this.height = $htmlImage.height;
+		const source = this.source;
+		const {
+			width,
+			height
+		} = $htmlImage;
+		this.width = width;
+		this.height = height;
+		[
+			["width", width],
+			["height", height]
+		].forEach(info => {
+			const [key, newVal] = info
+			const getter_key = `__${key}`;
+			const oldVal = source[getter_key];
+			if (oldVal !== newVal) {
+				source[getter_key] = newVal;
+				source.$properties[key].changed(newVal, oldVal, key)
+			}
+		});
 		prevent_draw || this.$reDrawWH();
+	}
+	$reDrawTileWH() {
+		debugger
+		const $sprite = this.$sprite;
+		const {
+			width: paintedWidth,
+			height: paintedHeight,
+		} = this.painted;
+
+		const {
+			width: sourceWidth,
+			height: sourceHeight,
+		} = this.source;
+		console.log(paintedWidth / sourceWidth, paintedHeight / sourceHeight)
+		$sprite.tileScale.set(paintedWidth / sourceWidth, paintedHeight / sourceHeight);
 	}
 	$reDrawWH() {
 		const $sprite = this.$sprite;
@@ -191,27 +365,33 @@ class Image extends Container {
 			height,
 		} = this.$getImgWH()
 		$sprite.position.set(x, y);
+		const {
+			$repeat_x,
+			$repeat_y
+		} = this;
+		const spriteWidth = $repeat_x ? width : this.painted.width;
+		const spriteHeight = $repeat_y ? height : this.painted.height;
 		if (width < 0) {
 			if (container.width > 0) {
 				container.width = -container.width;
 			}
-			$sprite.width = -width;
+			$sprite.width = -spriteWidth;
 		} else {
 			if (container.width < 0) {
 				container.width = -container.width
 			}
-			$sprite.width = width;
+			$sprite.width = spriteWidth;
 		}
 		if (height < 0) {
 			if (container.height > 0) {
 				container.height = -container.height;
 			}
-			$sprite.height = -height;
+			$sprite.height = -spriteHeight;
 		} else {
 			if (container.height < 0) {
 				container.height = -container.height
 			}
-			$sprite.height = height;
+			$sprite.height = spriteHeight;
 		}
 	}
 	get $src_ratio() {
