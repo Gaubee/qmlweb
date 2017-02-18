@@ -15,14 +15,6 @@ class PixiObject extends QmlWeb.QObject {
 
     QmlWeb.AnchorsLayoutHandles.init(this);
 
-    // console.log(this.$properties["width"].changed)
-    // anchors.widthChanged.connect(this, this.width.changed.bind(this.width));
-    // anchors.heightChanged.connect(this, this.height.changed.bind(this.height));
-    // anchors.leftChanged.connect(this, this.left.changed.bind(this.left));
-    // anchors.rightChanged.connect(this, this.right.changed.bind(this.right));
-    // anchors.topChanged.connect(this, this.top.changed.bind(this.top));
-    // anchors.bottomChanged.connect(this, this.bottom.changed.bind(this.bottom));
-
     // childrenRect property
     this.childrenRect = new QmlWeb.QObject(this);
     QmlWeb.createProperties(this.childrenRect, {

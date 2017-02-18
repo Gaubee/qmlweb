@@ -73,21 +73,20 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 
 		QmlWeb.createProperties(self, {
 			width: "real",
-			height: "real"
-		});
-
-		let source_x = 0;
-		QmlWeb.createProperty("real", self, "x", {
-			setter: function(newVal) {
-				this.val = isFinite(newVal) ? +newVal : 0;
-				self.effect_anchors.left = this.val + (self.parent ? self.parent.left : 0)
-			}
-
-		});
-		QmlWeb.createProperty("real", self, "y", {
-			setter: function(newVal) {
-				this.val = isFinite(newVal) ? +newVal : 0;
-				self.effect_anchors.top = this.val + (self.parent ? self.parent.top : 0)
+			height: "real",
+			x: {
+				type: "real",
+				setter: function(newVal) {
+					this.val = isFinite(newVal) ? +newVal : 0;
+					// self.effect_anchors.left = this.val + (self.parent ? self.parent.left : 0)
+				}
+			},
+			y: {
+				type: "real",
+				setter: function(newVal) {
+					this.val = isFinite(newVal) ? +newVal : 0;
+					// self.effect_anchors.top = this.val + (self.parent ? self.parent.top : 0)
+				}
 			}
 		});
 
@@ -178,7 +177,7 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 					break;
 				case "left":
 					getter = () => {
-						return effect_anchors.left + effect_anchors.leftMargin
+						return (self.parent ? self.parent.left : 0) + effect_anchors.x + effect_anchors.leftMargin
 					}
 					break;
 				case "right":
@@ -189,7 +188,7 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 					break;
 				case "top":
 					getter = () => {
-						return effect_anchors.top + effect_anchors.topMargin
+						return (self.parent ? self.parent.top : 0) + effect_anchors.y + effect_anchors.topMargin
 					}
 					break;
 				case "bottom":
@@ -280,22 +279,18 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 			const fill = newVal;
 
 			u.width = () => fill.width - lM() - rM();
-			u.left = () => fill.left;
-			u.x = () => this.left - p_left();
+			u.x = () => fill.left - p_left();
 
 			u.height = () => fill.height - tM() - bM();
-			u.top = () => fill.top;
-			u.y = () => this.top - p_top();
+			u.y = () => fill.top - p_top();
 
 			bindNewValue(this, newVal, FILL_BIND_PROPS);
 		} else {
 			[
 				"width",
 				"x",
-				"left",
 				"height",
 				"y",
-				"top",
 			].forEach(key => u[key] = null)
 		}
 		this.$updateAnchorsGetter(u);
@@ -325,17 +320,13 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 		const u = {};
 		if (newVal instanceof QmlWeb.PixiObject) {
 			const newCenterIn = newVal;
-			u.left = () => newCenterIn.horizontalCenter - this.width / 2;
-			u.x = () => this.left - p_left();
-			u.top = () => newCenterIn.verticalCenter - this.height / 2;
-			u.y = () => this.top - p_top();
+			u.x = () => newCenterIn.horizontalCenter - this.width / 2 - p_left();
+			u.y = () => newCenterIn.verticalCenter - this.height / 2 - p_top();
 
 			bindNewValue(this, newCenterIn, CENTERIN_BIND_PROPS);
 		} else {
 			[
-				"left",
 				"x",
-				"top",
 				"y",
 			].forEach(key => u[key] = null)
 		}
@@ -355,34 +346,49 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 		} else {
 			p_left = () => 0
 		}
-
+		const u = {};
 		const effect_anchors = this.effect_anchors;
 		effect_anchors[name] = newVal;
-		if (name === "right") {
-			effect_anchors.left = effect_anchors.right - effect_anchors.rightMargin - this.width - effect_anchors.leftMargin
+		if (name === "left") {
+			u.x = () => newVal - p_left();
+		} else { //right
+			if (!anchors.$properties.left.binding) {
+				u.x = () => newVal - this.width - p_left();
+				if (!anchors._only_right_binding) {
+					anchors._only_right_binding = (width) => {
+						console.log("zzzz", width)
+						this.xChanged(this.x, null, 'x')
+					}
+					this.widthChanged.connect(this, anchors._only_right_binding);
+				}
+			} else {
+				if (anchors._only_right_binding) {
+					this.widthChanged.disconnect(anchors._only_right_binding);
+					anchors._only_right_binding = null;
+				}
+			}
+			// otherwise width force bind anchors and ignore old bind.
 		}
-		effect_anchors.x = this.left - p_left()
-
 		// Lock/UnLock Width
-		const u = {};
 		const LOCK_KEY = "LOCK_width_BY_left_AND_right";
-		if (anchors.left && anchors.right) {
+		const is_lock_width = isFinite(anchors.left) && isFinite(anchors.right)
+		if (is_lock_width) {
 			if (!anchors[LOCK_KEY]) {
 				anchors[LOCK_KEY] = true;
-
-				const leftM = () => effect_anchors.leftMargin;
-				const rightM = () => effect_anchors.rightMargin;
-				u.width = () => effect_anchors.right - effect_anchors.left - leftM() - rightM();
-				this.$updateAnchorsGetter(u);
-			} else {
-				this.$properties.width.changed(this.width, null, "width");
+				u.width = () => effect_anchors.right -
+					effect_anchors.left -
+					effect_anchors.leftMargin -
+					effect_anchors.rightMargin;
 			}
 		} else {
 			if (anchors[LOCK_KEY]) {
 				anchors[LOCK_KEY] = false;
 				u.width = null
-				this.$updateAnchorsGetter(u);
 			}
+		}
+		this.$updateAnchorsGetter(u);
+		if (is_lock_width && name === "right") {
+			this.$properties.width.changed(this.width, null, "width");
 		}
 	};
 
@@ -414,8 +420,7 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 			}
 			effect_anchors[LOCK_KEY] = true
 			const u = {};
-			u.left = () => anchors.horizontalCenter - this.width / 2;
-			u.x = () => this.left - p_left();
+			u.x = () => anchors.horizontalCenter - this.width / 2 - p_left();
 
 			this.$updateAnchorsGetter(u);
 		}
@@ -432,7 +437,7 @@ QmlWeb.AnchorsLayoutHandles = (() => {
 		effect_anchors[name] = newVal
 	};
 
-	const anchors_lock_setter = () => {/*console.log("anchor lockd!")*/};
+	const anchors_lock_setter = () => { /*console.log("anchor lockd!")*/ };
 	exports.$updateAnchorsGetter = function(u) {
 		const effect_anchors = this.effect_anchors;
 		for (const key in u) {
