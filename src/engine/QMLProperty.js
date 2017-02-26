@@ -19,10 +19,10 @@ class QMLProperty {
     this.$tidyupList = [];
   }
   setter(newVal) {
-    this.val = newVal
+    this.val = newVal;
   }
   getter() {
-    return this.val
+    return this.val;
   }
 
   // Called by update and set to actually set this.val, performing any type
@@ -103,9 +103,9 @@ class QMLProperty {
     } catch (e) {
       console.error("QMLProperty.update binding error:",
         e,
-        '\n-------\n',
+        "\n-------\n",
         Function.prototype.toString.call(this.binding.eval),
-        '\n-------'
+        "\n-------"
       );
     } finally {
       QMLProperty.popEvaluatingProperty();
@@ -129,24 +129,24 @@ class QMLProperty {
   // Define getter
   get() {
       //if (this.needsUpdate && !QMLProperty.evaluatingPropertyPaused) {
-      if (this.needsUpdate &&
+    if (this.needsUpdate &&
         QmlWeb.engine.operationState !== QmlWeb.QMLOperationState.Init) {
-        this.update();
-      }
+      this.update();
+    }
 
       // If this call to the getter is due to a property that is dependant on this
       // one, we need it to take track of changes
-      if (QMLProperty.evaluatingProperty) {
+    if (QMLProperty.evaluatingProperty) {
         //console.log(this,QMLProperty.evaluatingPropertyStack.slice(0),this.val);
-        this.changed.connect(
+      this.changed.connect(
           QMLProperty.evaluatingProperty,
           QMLProperty.prototype.update,
           QmlWeb.Signal.UniqueConnection
         );
-      }
-
-      return this.getter();
     }
+
+    return this.getter();
+  }
     // Define setter
   set(newVal, reason, objectScope, componentScope) {
     const oldVal = this.val;

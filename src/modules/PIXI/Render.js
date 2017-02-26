@@ -13,16 +13,17 @@ QmlWeb.nextTickWithId = function(tick_handle, id) {
 };
 QmlWeb.registerPixiType({
   name: "Renderer"
-}, class extends PixiObject {
+}, class extends QmlWeb.PixiObject {
   constructor(meta) {
     super(meta);
 
-    const renderer = this.renderer = PIXI.autoDetectRenderer(this.width, this.height, {
-      autoResize: true,
-      antialias: true,
-      transparent: true,
-      resolution: 1
-    });
+    const renderer = this.renderer =
+      PIXI.autoDetectRenderer(this.width, this.height, {
+        autoResize: true,
+        antialias: true,
+        transparent: true,
+        resolution: 1
+      });
     this.dom = this.renderer.view;
     this.widthChanged.connect(this, this.$onWidthHeightChanged);
     this.heightChanged.connect(this, this.$onWidthHeightChanged);
@@ -50,6 +51,6 @@ QmlWeb.registerPixiType({
         container.addChild(node.dom);
         node.parent = this;
       }
-    })
+    });
   }
 });

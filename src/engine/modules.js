@@ -241,7 +241,7 @@ function callSuper(self, meta) {
 
 function initQmlType(self, meta) {
   const info = meta.super.$qmlTypeInfo || {};
-    if (info.enums) {
+  if (info.enums) {
     // TODO: not exported to the whole file scope yet
     Object.keys(info.enums).forEach(name => {
       self[name] = info.enums[name];

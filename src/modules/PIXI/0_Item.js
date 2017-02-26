@@ -51,17 +51,17 @@ class PixiObject extends QmlWeb.QObject {
   setBinding(key, code) {
     let keys;
     if (typeof key === "string") {
-      keys = key.split(".")
+      keys = key.split(".");
     } else if (key instanceof Array) {
       keys = key;
     } else {
-      return
+      return;
     }
 
     let ctx = this;
     keys.forEach((key, i) => {
       if (i < keys.length - 1) {
-        ctx = ctx[key]
+        ctx = ctx[key];
       } else {
         ctx.$properties[key].set(new QmlWeb.QMLBinding(code),
           QmlWeb.QMLProperty.ReasonUser, this, this.$context);
