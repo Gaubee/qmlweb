@@ -11,12 +11,12 @@ QmlWeb.nextTickWithId = function(tick_handle, id) {
     });
   }
 };
-QmlWeb.registerPixiType({
-  name: "Renderer"
-}, class extends QmlWeb.PixiObject {
+class Renderer extends QmlWeb.PixiObject {
   constructor(meta) {
     super(meta);
-
+    QmlWeb.createProperties(this, {
+      color: "color"
+    });
     const renderer = this.renderer =
       PIXI.autoDetectRenderer(this.width, this.height, {
         autoResize: true,
@@ -28,6 +28,7 @@ QmlWeb.registerPixiType({
     this.widthChanged.connect(this, this.$onWidthHeightChanged);
     this.heightChanged.connect(this, this.$onWidthHeightChanged);
     this.childrensChanged.connect(this, this.$onChildrensChanged);
+    this.colorChanged.connect(this, this.$onColorChanged);
 
 
     const stage = this.stage = new PIXI.Container();
@@ -53,4 +54,16 @@ QmlWeb.registerPixiType({
       }
     });
   }
-});
+  $onColorChanged(newColor){
+    if(newColor){
+      this.renderer.transparent = false;
+      this.renderer.backgroundColor = (newColor&&newColor.$number)||0xFFFFFF;
+    }else{
+      this.renderer.transparent = true;
+    }
+  }
+}
+QmlWeb.registerPixiType({
+  global: 1,
+  name: "Renderer"
+}, Renderer);

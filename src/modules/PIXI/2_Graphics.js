@@ -8,7 +8,7 @@ class Graphics extends Container {
     });
   }
 }
-QmlWeb.Graphics = Graphics;
 QmlWeb.registerPixiType({
+  global: 1,
   name: "Graphics",
 }, Graphics);

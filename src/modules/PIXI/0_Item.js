@@ -68,6 +68,15 @@ class PixiObject extends QmlWeb.QObject {
       }
     });
   }
+  getRenderer() {
+    let renderer = this;
+    while (renderer) {
+      if (renderer instanceof QmlWeb.Renderer) {
+        return renderer.renderer
+      }
+      renderer = renderer.parent;
+    }
+  }
 }
 QmlWeb.PixiObject = PixiObject;
 const PIXI_MODULE_NAME = "PIXI";

@@ -545,5 +545,6 @@ Rectangle.drawRoundedRectangle = drawRoundedRectangle;
 Rectangle.drawRectangleBorder = drawRectangleBorder;
 
 QmlWeb.registerPixiType({
+  global: 1,
   name: "Rectangle",
 }, Rectangle);

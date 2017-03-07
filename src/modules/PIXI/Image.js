@@ -2,6 +2,7 @@ class Image extends Container {
   constructor(meta) {
     super(meta);
     const self = this;
+    self.dirty = false; // view changed.
     QmlWeb.createProperties(this, {
       progress: "real",
       src: "url",
@@ -206,6 +207,8 @@ class Image extends Container {
   }
   $afterSourceChanged(texture) {
     this.$sprite.texture = texture;
+    this.$sprite.emit("update", texture);
+    this.dirty = true;
     this.$setSourceSize(); // reset width height
   }
   $setSourceSize() {
@@ -215,8 +218,9 @@ class Image extends Container {
       width,
       height
     } = $htmlImage;
-    this.width = width;
-    this.height = height;
+    // debugger
+    // this.width = width;
+    // this.height = height;
     [
       ["width", width],
       ["height", height]
@@ -238,6 +242,7 @@ class Image extends Container {
       color_dom.beginFill(color.$number, color.$a);
       color_dom.drawRect(0, 0, this.width, this.height);
       color_dom.endFill();
+      this.dirty = true;
     }, `${this.$uid}|reDrawBG`);
   }
   $reDrawTileWH() {
@@ -253,6 +258,7 @@ class Image extends Container {
         height: sourceHeight,
       } = this.source;
       $sprite.tileScale.set(paintedWidth / sourceWidth, paintedHeight / sourceHeight);
+      this.dirty = true;
     }, `${this.$uid}|reDrawTileWH`);
   }
   $reDrawWH() {
@@ -290,8 +296,16 @@ class Image extends Container {
         }
         $sprite.height = spriteHeight;
       }
+      this.dirty = true;
     }, `${this.$uid}|reDrawWH`);
   }
+  // get dirty() {
+  //   return this._dirty
+  // }
+  // set dirty(v) {
+  //   v && console.log("dirty!! view changed");
+  //   this._dirty = v;
+  // }
   get $src_ratio() {
     const baseTexture = this.$sprite.texture.baseTexture;
     return baseTexture.realWidth / baseTexture.realHeight;
@@ -303,6 +317,7 @@ class Image extends Container {
 
 QmlWeb.registerPixiType({
   name: "Image",
+  global: 1,
 }, Image);
 
 Image.Stretch = 0; // (default)the image is scaled to fit
