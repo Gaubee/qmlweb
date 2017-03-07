@@ -23,10 +23,10 @@ QmlWeb.Mask = class Mask {
             const new_mask_sprite = self.mask = this._mask_sprite =
               new PIXI.Sprite(this.generateCanvasTexture());
             this.renderable = old_renderable;
-            this.parent.addChild(new_mask_sprite);
+            this.addChild(new_mask_sprite);
             this.emit('mask-changed', new_mask_sprite);
             if (old_mask_sprite) {
-              this.parent.removeChild(old_mask_sprite);
+              this.removeChild(old_mask_sprite);
               old_mask_sprite.destroy(true);
             }
           }
@@ -50,10 +50,10 @@ QmlWeb.Mask = class Mask {
                 const new_mask_sprite = self.mask = this._mask_sprite =
                   new PIXI.Sprite(renderer.generateTexture(this));
                 this.renderable = old_renderable;
-                con.addChild(new_mask_sprite);
+                this.addChild(new_mask_sprite);
                 this.emit('mask-changed', new_mask_sprite);
                 if (old_mask_sprite) {
-                  con.removeChild(old_mask_sprite);
+                  this.removeChild(old_mask_sprite);
                   old_mask_sprite.destroy(true);
                 }
                 _is_lock = false;

@@ -1,25 +1,4 @@
 class Container extends PixiObject {
-  static setupMaskProperty(obj, key) {
-    QmlWeb.createProperty("var", obj, key, {
-      getter() {
-        if (!this.val && this.val_buider instanceof Function) {
-          const val_buider = this.val_buider;
-          this.val_buider = val_buider;
-          this.val = val_buider(this.old_val);
-        }
-        return this.val;
-      },
-      setter(newVal) {
-        if (newVal instanceof PIXI.Container) {
-          this.val = newVal;
-        } else if (newVal instanceof Function) {
-          this.val_buider = newVal;
-          this.old_val = this.val;
-          this.val = null; // emit changed
-        }
-      }
-    });
-  }
   constructor(meta) {
     super(meta);
     this.changed = QmlWeb.Signal.signal([], {
@@ -34,8 +13,6 @@ class Container extends PixiObject {
         initialValue: 1
       }
     });
-    Container.setupMaskProperty(this, "SELF");
-    this.SELF = () => this.dom;
     this.childrensChanged.connect(this, this.$onChildrensChanged);
     this.parentChanged.connect(this, this.$onChildrensChanged);
     this.dom = new PIXI.Container();
@@ -90,38 +67,6 @@ class Container extends PixiObject {
     }, `${this.$uid}|reDrawXY`);
   }
 
-  // $onMaskChanged(newItem) {
-  //   const container = this.dom;
-  //   let oldMask, newMask;
-  //   if (container.mask) {
-  //     oldMask = container.mask;
-  //     // container.mask = null;
-  //     // oldMask.emit("unMask", this);
-  //   }
-  //   if (newItem) {
-  //     let mask;
-  //     if (newItem instanceof PIXI.Container) {
-  //       newMask = newItem;
-  //     }
-  //   }
-  //   if (newMask) {
-  //     if (oldMask) {
-  //       if (newMask !== oldMask) {
-  //         oldMask.emit("unMask", this);
-  //         container.mask = newMask;
-  //         newMask.emit("inMask", this);
-  //       }
-  //     } else {
-  //       container.mask = newMask;
-  //       newMask.emit("inMask", this);
-  //     }
-  //   } else if (newItem) {
-  //     // reset to null
-  //     this.$properties.mask.set(null, QMLProperty.ReasonInner);
-  //   } else {
-  //     container.mask = null;
-  //   }
-  // }
   $onMaskChanged(newItem, oldItem) {
     const container = this.dom;
     let oldMask, newMask;
@@ -142,20 +87,10 @@ class Container extends PixiObject {
     if (oldMask) {
       const mask_ins = QmlWeb.Mask.getIns(oldItem);
       mask_ins.unBindMask(container);
-      // if (container._mask_change_handler) {
-      //   oldMask.off('mask-changed', container._mask_change_handler);
-      //   container._mask_change_handler = null;
-      //   container.mask = null;
-      // }
     }
     if (newMask) {
       const mask_ins = QmlWeb.Mask.getIns(newItem);
       mask_ins.bindMask(container);
-      // container.mask = newMask._mask_sprite;
-      // newMask.on('mask-changed', container._mask_change_handler =
-      //   (new_mask_sprite) => {
-      //     container.mask = new_mask_sprite;
-      //   });
     }
   }
   $onClipMaskChanged(newItem, oldItem) {

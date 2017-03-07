@@ -98,10 +98,6 @@ class Rectangle extends QmlWeb.Graphics {
         initialValue: 0
       },
     });
-    // for mask
-    ["INNER", "OUTTER", "SELF"].forEach(key => {
-      QmlWeb.Container.setupMaskProperty(border, key);
-    });
 
     QmlWeb.setupGetter(border, "forMask", () => border.dom.mask || border.dom);
 
@@ -216,16 +212,7 @@ class Rectangle extends QmlWeb.Graphics {
 
       border_graphics.beginFill(border_color.$number, border_color.$a);
       graphics.beginFill(color.$number, color.$a);
-      let _empty_border_mask;
-      const get_empty_border_mask = () => {
-        if (!_empty_border_mask) {
-          _empty_border_mask = Rectangle.createMaskGenerator(border_graphics,
-            () => {
-              // empty content
-            });
-        }
-        return _empty_border_mask;
-      };
+
       // graphics.lineStyle(10, 0, 0.3);
       if (effect_radius_values.is_use_radius) { // Draw Radius Border
         const {
@@ -254,14 +241,6 @@ class Rectangle extends QmlWeb.Graphics {
           if (border_width >= min_size / 2) {
             // Only Draw Border
             applyDrawRoundedRectangle(drawFullArgs, border_graphics);
-            /*MASK*/
-            border.SELF = Rectangle.createMaskGenerator(border_graphics,
-              (dom_mask) => {
-                dom_mask.beginFill(0xffff00, 1);
-                applyDrawRoundedRectangle(drawFullArgs, dom_mask);
-                dom_mask.endFill();
-              });
-            border.INNER = get_empty_border_mask();
           } else {
             // Draw Border And Body
             const innerRateX = (width - double_border_width) / width;
@@ -309,63 +288,15 @@ class Rectangle extends QmlWeb.Graphics {
 
             // Draw Body
             applyDrawRoundedRectangle(drawInnerArgs, graphics);
-
-            /*MASK*/
-            border.SELF = Rectangle.createMaskGenerator(border_graphics,
-              (dom_mask) => {
-                dom_mask.beginFill(0xffff00, 1);
-                applyDrawRoundedRectangle(drawFullArgs, dom_mask);
-                dom_mask.endFill();
-                dom_mask.beginFill(0xFFFFFF, 1);
-                applyDrawRoundedRectangle(drawInnerArgs, dom_mask);
-                dom_mask.endFill();
-              });
-            border.INNER = Rectangle.createMaskGenerator(border_graphics,
-              (dom_mask) => {
-                dom_mask.beginFill(0xffff00, 1);
-                applyDrawRoundedRectangle(drawInnerArgs, dom_mask);
-                dom_mask.endFill();
-              });
           }
         } else {
           // Only Draw Body
           applyDrawRoundedRectangle(drawFullArgs, graphics);
-          /*MASK*/
-          border.SELF = get_empty_border_mask();
-          border.INNER = Rectangle.createMaskGenerator(border_graphics,
-            (dom_mask) => {
-              dom_mask.beginFill(0xffff00, 1);
-              applyDrawRoundedRectangle(drawFullArgs, dom_mask);
-              dom_mask.endFill();
-            });
         }
-        /* border.OUTTER MASK */
-        border.OUTTER = Rectangle.createMaskGenerator(border_graphics,
-          (dom_mask) => {
-            dom_mask.beginFill(0xffff00, 1);
-            dom_mask.drawRect(0, 0, width, height);
-            dom_mask.endFill();
-            dom_mask.beginFill(0xFFFFFF, 1);
-            applyDrawRoundedRectangle(drawFullArgs, dom_mask);
-            dom_mask.endFill();
-          });
-        // SELF MASK
-        this.SELF = Rectangle.createMaskGenerator(graphics, (dom_mask) => {
-          dom_mask.beginFill(0xffff00, 1);
-          applyDrawRoundedRectangle(drawFullArgs, dom_mask);
-          dom_mask.endFill();
-        });
       } else { // Only Draw Rect
         if (border_width) { // Draw Border And Body
           if (border_width >= min_size / 2) { // Only Draw Border, No Body
             border_graphics.drawRect(0, 0, width, height);
-            border.SELF = Rectangle.createMaskGenerator(border_graphics,
-              (dom_mask) => {
-                dom_mask.beginFill(0xffff00, 1);
-                dom_mask.drawRect(0, 0, width, height);
-                dom_mask.endFill();
-              });
-            border.OUTTER = border.INNER = get_empty_border_mask();
           } else {
             // Draw Border
             drawRectangleBorder(border_graphics, width, height,
@@ -375,41 +306,10 @@ class Rectangle extends QmlWeb.Graphics {
             // Draw Body
             graphics.drawRect(border_width, border_width,
               width - double_border_width, height - double_border_width);
-
-            border.SELF = Rectangle.createMaskGenerator(border_graphics,
-              (dom_mask) => {
-                dom_mask.beginFill(0xffff00, 1);
-                drawRectangleBorder(dom_mask, width, height,
-                  border_width
-                );
-                dom_mask.endFill();
-              });
-            border.INNER = Rectangle.createMaskGenerator(border_graphics,
-              (dom_mask) => {
-                dom_mask.beginFill(0xffff00, 1);
-                dom_mask.drawRect(border_width, border_width,
-                  width - double_border_width, height - double_border_width);
-                dom_mask.endFill();
-              });
-            border.OUTTER = get_empty_border_mask();
           }
         } else { // Only Draw Body
           graphics.drawRect(0, 0, width, height);
-          /*MASK*/
-          border.INNER = Rectangle.createMaskGenerator(border_graphics,
-            (dom_mask) => {
-              dom_mask.beginFill(0xffff00, 1);
-              dom_mask.drawRect(0, 0, width, height);
-              dom_mask.endFill();
-            });
-          border.SELF = border.OUTTER = get_empty_border_mask();
         }
-        // SELF MASK
-        this.SELF = Rectangle.createMaskGenerator(graphics, (dom_mask) => {
-          dom_mask.beginFill(0xffff00, 1);
-          dom_mask.drawRect(0, 0, width, height);
-          dom_mask.endFill();
-        });
       }
       border_graphics.endFill();
       graphics.endFill();
