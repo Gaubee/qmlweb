@@ -7,7 +7,7 @@ QmlWeb.Mask = class Mask {
     const renderer = mask.getRenderer();
     let method_name = "renderCanvas";
     if (renderer.type === PIXI.RENDERER_TYPE.WEBGL) {
-      method_name = "renderWebGL"
+      method_name = "renderWebGL";
     }
     const con = mask.dom;
     const is_inited = con._is_as_mask;
@@ -15,56 +15,56 @@ QmlWeb.Mask = class Mask {
     if (mask instanceof QmlWeb.Graphics) {
       if (!is_inited) {
         con._is_as_mask = true;
-        con[method_name] = function(renderer) {
+        con[method_name] = function(_renderer) {
           if (this.dirty) {
-            let old_renderable = this.renderable;
+            const old_renderable = this.renderable;
             const old_mask_sprite = this._mask_sprite;
             this.renderable = true;
             const new_mask_sprite = self.mask = this._mask_sprite =
               new PIXI.Sprite(this.generateCanvasTexture());
             this.renderable = old_renderable;
             this.addChild(new_mask_sprite);
-            this.emit('mask-changed', new_mask_sprite);
+            this.emit("mask-changed", new_mask_sprite);
             if (old_mask_sprite) {
               this.removeChild(old_mask_sprite);
               old_mask_sprite.destroy(true);
             }
           }
-          oldMethod(renderer);
-        }
+          oldMethod(_renderer);
+        };
       }
     } else if (mask instanceof QmlWeb.Image) {
       if (!is_inited) {
         con._is_as_mask = true;
         con._mask_sprite = null;
-        var _is_lock;
-        con[method_name] = function(renderer) {
+        let _is_lock;
+        con[method_name] = function(_renderer) {
           if (!_is_lock) {
             _is_lock = true;
             if (mask.dirty) {
               mask.dirty = false;
               QmlWeb.nextTick(() => {
                 const old_mask_sprite = this._mask_sprite;
-                let old_renderable = this.renderable;
+                const old_renderable = this.renderable;
                 this.renderable = true;
                 const new_mask_sprite = self.mask = this._mask_sprite =
-                  new PIXI.Sprite(renderer.generateTexture(this));
+                  new PIXI.Sprite(_renderer.generateTexture(this));
                 this.renderable = old_renderable;
                 this.addChild(new_mask_sprite);
-                this.emit('mask-changed', new_mask_sprite);
+                this.emit("mask-changed", new_mask_sprite);
                 if (old_mask_sprite) {
                   this.removeChild(old_mask_sprite);
                   old_mask_sprite.destroy(true);
                 }
                 _is_lock = false;
-              })
+              });
             } else {
               _is_lock = false;
             }
           }
 
-          oldMethod(renderer);
-        }
+          oldMethod(_renderer);
+        };
       }
     }
     self.qmlobj = mask;
@@ -77,7 +77,7 @@ QmlWeb.Mask = class Mask {
     if (this.mask) {
       cb(this.mask);
     } else {
-      this.dom.on('mask-changed', new_mask_sprite => {
+      this.dom.on("mask-changed", new_mask_sprite => {
         cb(new_mask_sprite);
       });
     }
@@ -85,7 +85,7 @@ QmlWeb.Mask = class Mask {
   bindMask(container) {
     this.bind_count += 1;
     container.mask = this.mask;
-    this.dom.on('mask-changed', container._mask_change_handler =
+    this.dom.on("mask-changed", container._mask_change_handler =
       (new_mask_sprite) => {
         container.mask = new_mask_sprite;
       });
@@ -94,10 +94,10 @@ QmlWeb.Mask = class Mask {
   unBindMask(container) {
     if (container._mask_change_handler) {
       this.bind_count -= 1;
-      this.dom.off('mask-changed', container._mask_change_handler);
+      this.dom.off("mask-changed", container._mask_change_handler);
       container._mask_change_handler = null;
       container.mask = null;
-      if (this.bind_count == 0) {
+      if (!this.bind_count) { // === 0
         this.dom.renderable = true;
       }
     }

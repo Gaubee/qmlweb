@@ -1,4 +1,4 @@
-class Container extends PixiObject {
+class Container extends QmlWeb.PixiObject {
   constructor(meta) {
     super(meta);
     this.changed = QmlWeb.Signal.signal([], {
@@ -7,7 +7,6 @@ class Container extends PixiObject {
     QmlWeb.createProperties(this, {
       mask: "Item",
       clipMask: "Item",
-      filterMask: "Item",
       opacity: {
         type: "real",
         initialValue: 1
@@ -21,11 +20,11 @@ class Container extends PixiObject {
     ];
     const PixiLifecycle = {};
     LifecycleKeys.forEach(signal_key => {
-      QmlWeb.delayInitProperty(PixiLifecycle, signal_key, (obj, signal_key) => {
-        const signal = new Signal([], {
+      QmlWeb.delayInitProperty(PixiLifecycle, signal_key, (obj, event_name) => {
+        const signal = new QmlWeb.Signal([], {
           obj: this
         });
-        if (signal_key === "init") {
+        if (event_name === "init") {
           QmlWeb.engine.completedSignals.push(signal.signal);
         }
         return signal;
@@ -38,7 +37,6 @@ class Container extends PixiObject {
     this.yChanged.connect(this, this.$reDrawXY);
     this.maskChanged.connect(this, this.$onMaskChanged);
     this.clipMaskChanged.connect(this, this.$onClipMaskChanged);
-    this.filterMaskChanged.connect(this, this.$onFilterMaskChanged);
     this.opacityChanged.connect(this, this.$onOpacityChanged);
   }
   updateGeometry() {
@@ -48,10 +46,11 @@ class Container extends PixiObject {
     this.x = bounds.x;
     this.y = bounds.y;
   }
-  $onChildrensChanged(newData) {
-    if (this.dom.parent) {
-      const container = this.dom;
-      this.childrens.map(node => {
+  $onChildrensChanged() {
+    const container = this.dom;
+    const childrens = this.childrens;
+    if (container.parent && childrens) {
+      childrens.forEach(node => {
         if (node.dom instanceof PIXI.DisplayObject &&
           node.dom.parent !== container) {
           container.addChild(node.dom);
@@ -69,14 +68,14 @@ class Container extends PixiObject {
 
   $onMaskChanged(newItem, oldItem) {
     const container = this.dom;
-    let oldMask, newMask;
+    let oldMask;
+    let newMask;
     if (oldItem) {
       oldMask = oldItem.dom;
       // container.mask = null;
       // oldMask.emit("unMask", this);
     }
     if (newItem) {
-      let mask;
       if (newItem instanceof PIXI.Container) {
         newMask = newItem;
       } else if (newItem instanceof QmlWeb.Graphics ||
@@ -95,14 +94,12 @@ class Container extends PixiObject {
   }
   $onClipMaskChanged(newItem, oldItem) {
     const container = this.dom;
-    let oldMask, newMask;
+    let oldMask;
+    let newMask;
     if (oldItem) {
       oldMask = oldItem.dom;
-      // container.mask = null;
-      // oldMask.emit("unMask", this);
     }
     if (newItem) {
-      let mask;
       if (newItem instanceof QmlWeb.Graphics) {
         newMask = newItem.dom;
       }
@@ -117,15 +114,15 @@ class Container extends PixiObject {
     }
   }
   $onOpacityChanged(newVal) {
-    newVal = Math.max(Math.min(+newVal, 1), 0);
-    this.dom.alpha = newVal;
+    const alpha = Math.max(Math.min(+newVal, 1), 0);
+    this.dom.alpha = alpha;
   }
   addFilter(filter) {
     const filters = this.dom.filters;
     if (filters) {
-      filters.push(filter)
+      filters.push(filter);
     } else {
-      this.dom.filters = [filter]
+      this.dom.filters = [filter];
     }
   }
   removeFilter(filter) {
@@ -133,24 +130,7 @@ class Container extends PixiObject {
     if (filters && filters.length) {
       const rm_index = filters.indexOf(filter);
       if (rm_index !== -1) {
-        filters.splice(rm_index, 1)
-      }
-    }
-  }
-  $onFilterMaskChanged(newVal) {
-    if (newVal instanceof Container) {
-      let sprite = newVal.dom;
-      const MaskFilter = QmlWeb.MaskFilter;
-      if (!(sprite instanceof PIXI.Sprite)) {
-        sprite = MaskFilter.ContainerToSprite(sprite, newVal.getRenderer());
-      }
-      const mask_filter = this._mask_filter = new MaskFilter(sprite);
-      this.addFilter(mask_filter);
-    } else {
-      const filter = this.dom.filter;
-      const mask_filter = this._mask_filter;
-      if (mask_filter) {
-        this.removeFilter(mask_filter);
+        filters.splice(rm_index, 1);
       }
     }
   }

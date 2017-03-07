@@ -134,10 +134,9 @@ class QMLProperty {
       this.update();
     }
 
-      // If this call to the getter is due to a property that is dependant on this
-      // one, we need it to take track of changes
+      // If this call to the getter is due to a property that is
+      // dependant on this one, we need it to take track of changes
     if (QMLProperty.evaluatingProperty) {
-        //console.log(this,QMLProperty.evaluatingPropertyStack.slice(0),this.val);
       this.changed.connect(
           QMLProperty.evaluatingProperty,
           QMLProperty.prototype.update,
@@ -178,7 +177,8 @@ class QMLProperty {
         return;
       }
     } else {
-      if (reason !== QMLProperty.ReasonAnimation && reason !== QMLProperty.ReasonInner) {
+      if (reason !== QMLProperty.ReasonAnimation &&
+        reason !== QMLProperty.ReasonInner) {
         this.binding = null;
       }
       if (val instanceof Array) {

@@ -1,4 +1,4 @@
-class Image extends Container {
+class Image extends QmlWeb.Container {
   constructor(meta) {
     super(meta);
     const self = this;
@@ -15,7 +15,7 @@ class Image extends Container {
     QmlWeb.createProperty("var", this, "repeat", {
       setter(newVal) {
         if (self.$onSetRepeat(newVal)) {
-          const newVal = this.val = [self.$repeat_x, self.$repeat_y];
+          this.val = [self.$repeat_x, self.$repeat_y];
         }
       }
     });
@@ -38,8 +38,8 @@ class Image extends Container {
       source[getter_key] = default_val;
       QmlWeb.createProperty(type, source, key, {
         getter: () => source[getter_key],
-        setter(newVal) {
-          throw new TypeError(`Cannot assign to read-only property "source.${key}"`);
+        setter() {
+          throw new TypeError(`Cannot assign to read-only property "source.${key}"`); // eslint-disable-line max-len
         }
       });
       if (i > 1) { // width/height
@@ -81,7 +81,7 @@ class Image extends Container {
           return ratio;
         },
         setter: () => {
-          throw new TypeError("Cannot assign to read-only property \"painted.ratio\"");
+          throw new TypeError("Cannot assign to read-only property \"painted.ratio\""); // eslint-disable-line max-len
         }
       }
     });
@@ -101,10 +101,11 @@ class Image extends Container {
      *
      */
     const $htmlImage = this.$htmlImage = document.createElement("img");
-    // canvas image can't Cross-domain, so can load the picture use ajax directly.
+    // canvas image can't Cross-domain,
+    // so can load the picture use ajax directly.
     const $request = this.$request = new XMLHttpRequest();
     $request.responseType = "arraybuffer";
-    $request.onload = (e) => {
+    $request.onload = () => {
       const blob = new Blob([$request.response]);
       $htmlImage.src = window.URL.createObjectURL(blob);
       // Texture.from(HTMLImageElement) vs BaseTexture.fromImage(src)
@@ -141,16 +142,16 @@ class Image extends Container {
     ];
     const PixiLifecycle = this.Lifecycle;
     LifecycleKeys.forEach(signal_key => {
-      QmlWeb.delayInitProperty(PixiLifecycle, signal_key, (obj, signal_key) => {
-        const signal = new Signal([], {
+      QmlWeb.delayInitProperty(PixiLifecycle, signal_key, (obj, event_name) => {
+        const signal = new QmlWeb.Signal([], {
           obj: this
         });
-        switch (signal_key) {
+        switch (event_name) {
           case "load":
-            $htmlImage.addEventListener(signal_key, signal.signal);
+            $htmlImage.addEventListener(event_name, signal.signal);
             break;
           default:
-            $request.addEventListener(signal_key, signal.signal);
+            $request.addEventListener(event_name, signal.signal);
         }
         return signal;
       });
@@ -165,7 +166,7 @@ class Image extends Container {
     const $request = this.$request;
     $request.abort();
   }
-  $onColorChanged(newColor) {
+  $onColorChanged() {
     const color_dom = this.$bg_color_dom;
     if (!color_dom) {
       this.$bg_color_dom = new PIXI.Graphics();
@@ -176,8 +177,8 @@ class Image extends Container {
     this.$reDrawBG();
   }
   $onSetRepeat(newVal) {
-    let repeat_x,
-      repeat_y;
+    let repeat_x;
+    let repeat_y;
     if (newVal instanceof Array) {
       [repeat_x, repeat_y] = newVal;
     } else {
@@ -257,7 +258,8 @@ class Image extends Container {
         width: sourceWidth,
         height: sourceHeight,
       } = this.source;
-      $sprite.tileScale.set(paintedWidth / sourceWidth, paintedHeight / sourceHeight);
+      $sprite.tileScale.set(paintedWidth / sourceWidth,
+        paintedHeight / sourceHeight);
       this.dirty = true;
     }, `${this.$uid}|reDrawTileWH`);
   }
@@ -299,13 +301,6 @@ class Image extends Container {
       this.dirty = true;
     }, `${this.$uid}|reDrawWH`);
   }
-  // get dirty() {
-  //   return this._dirty
-  // }
-  // set dirty(v) {
-  //   v && console.log("dirty!! view changed");
-  //   this._dirty = v;
-  // }
   get $src_ratio() {
     const baseTexture = this.$sprite.texture.baseTexture;
     return baseTexture.realWidth / baseTexture.realHeight;
@@ -320,10 +315,17 @@ QmlWeb.registerPixiType({
   global: 1,
 }, Image);
 
-Image.Stretch = 0; // (default)the image is scaled to fit
-Image.PreserveAspectFit = 1; // the image is scaled uniformly to fit without cropping
-Image.PreserveAspectCrop = 2; // the image is scaled uniformly to fill, cropping if necessary
-Image.Tile = 3; // the image is duplicated horizontally and vertically
-Image.TileVertically = 4; // the image is stretched horizontally and tiled vertically
-Image.TileHorizontally = 5; // the image is stretched vertically and tiled horizontally
-Image.Pad = 6; // the image is not transformed
+// (default)the image is scaled to fit
+Image.Stretch = 0;
+// the image is scaled uniformly to fit without cropping
+Image.PreserveAspectFit = 1;
+// the image is scaled uniformly to fill, cropping if necessary
+Image.PreserveAspectCrop = 2;
+// the image is duplicated horizontally and vertically
+Image.Tile = 3;
+// the image is stretched horizontally and tiled vertically
+Image.TileVertically = 4;
+// the image is stretched vertically and tiled horizontally
+Image.TileHorizontally = 5;
+// the image is not transformed
+Image.Pad = 6;

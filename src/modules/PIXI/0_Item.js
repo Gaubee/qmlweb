@@ -59,11 +59,11 @@ class PixiObject extends QmlWeb.QObject {
     }
 
     let ctx = this;
-    keys.forEach((key, i) => {
+    keys.forEach((_key, i) => {
       if (i < keys.length - 1) {
-        ctx = ctx[key];
+        ctx = ctx[_key];
       } else {
-        ctx.$properties[key].set(new QmlWeb.QMLBinding(code),
+        ctx.$properties[_key].set(new QmlWeb.QMLBinding(code),
           QmlWeb.QMLProperty.ReasonUser, this, this.$context);
       }
     });
@@ -72,10 +72,12 @@ class PixiObject extends QmlWeb.QObject {
     let renderer = this;
     while (renderer) {
       if (renderer instanceof QmlWeb.Renderer) {
-        return renderer.renderer
+        renderer = renderer.renderer;
+        break;
       }
       renderer = renderer.parent;
     }
+    return renderer;
   }
 }
 QmlWeb.PixiObject = PixiObject;

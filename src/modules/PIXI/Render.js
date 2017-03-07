@@ -47,18 +47,19 @@ class Renderer extends QmlWeb.PixiObject {
   }
   $onChildrensChanged(newData) {
     const container = this.stage;
-    newData.map(node => {
-      if (node.dom instanceof PIXI.DisplayObject && node.dom.parent !== container) {
+    newData.forEach(node => {
+      if (node.dom instanceof PIXI.DisplayObject &&
+        node.dom.parent !== container) {
         container.addChild(node.dom);
         node.parent = this;
       }
     });
   }
-  $onColorChanged(newColor){
-    if(newColor){
+  $onColorChanged(newColor) {
+    if (newColor) {
       this.renderer.transparent = false;
-      this.renderer.backgroundColor = (newColor&&newColor.$number)||0xFFFFFF;
-    }else{
+      this.renderer.backgroundColor = newColor && newColor.$number || 0xFFFFFF;
+    } else {
       this.renderer.transparent = true;
     }
   }

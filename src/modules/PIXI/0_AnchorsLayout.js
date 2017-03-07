@@ -1,28 +1,33 @@
+/* Anchors-Layout system principle
+                                                   +---------------+  +--------+
+          +---------------------------------------->     THIS      |  | +----+ |
+          |                                        |   read only   |  | |USER| |
+   3.     |             +--------------------------+---------------+  | +----+ |
+ Notifies the           |                                             +--------+
+  read-only attribute   |                                                 |
+ that the real value    |                                                 |
+  has changed.          |                                                 |
+          |             |                                                 |
+          |             |      4.                                         |
+          |      Read the real data                   1. Set Anchors properties.
+          |       and redraw the layout                                   |
+          |             |                                                 |
+          |             |                                                 |
+          |             |                                                 |
+          |             |                                                 |
++-----------------------v                              +------------------v----+
+|  THIS.EFFECT_ANCHORS  | 2.Calculates layout results  |       THIS.ANCHORS    |
+| for store real value. <-and writes to effect_anchors-+ The default is        |
+|                       |                              | undefined. for setter.|
++-----------------------+                              +-----------------------+
+*/
+
+// FOR getter
+const readOnlySetter = function() {
+  throw new TypeError(`Cannot assign to read-only property "${this.name}"`); // eslint-disable-line no-invalid-this, max-len
+};
 QmlWeb.AnchorsLayoutHandles = (() => {
   const exports = {};
-	/* Anchors-Layout system principle
-	                                                   +---------------+  +--------+
-	          +---------------------------------------->     THIS      |  | +----+ |
-	          |                                        |   read only   |  | |USER| |
-	   3.     |             +--------------------------+---------------+  | +----+ |
-	 Notifies the           |                                             +--------+
-	  read-only attribute   |                                                 |
-	 that the real value    |                                                 |
-	  has changed.          |                                                 |
-	          |             |                                                 |
-	          |             |      4.                                         |
-	          |      Read the real data                   1. Set Anchors properties.
-	          |       and redraw the layout                                   |
-	          |             |                                                 |
-	          |             |                                                 |
-	          |             |                                                 |
-	          |             |                                                 |
-	         +--------------v--------+                                    +---v----------------------+
-	         |  THIS.EFFECT_ANCHORS  |   2.Calculates layout results      |       THIS.ANCHORS       |
-	         | for store real value. <---and writes to effect_anchors-----+ The default is undefined.|
-	         |                       |                                    | for setter.              |
-	         +-----------------------+                                    +--------------------------+
-	*/
   const effect_anchors_binds = {
     top: ["top", "y"],
     bottom: ["bottom"],
@@ -37,7 +42,7 @@ QmlWeb.AnchorsLayoutHandles = (() => {
     bottomMargin: ["height"],
   };
   exports.init = function(self) {
-		// FOR setter
+    // FOR setter
     const anchors_property = {
       left: "AnchorLine",
       right: "AnchorLine",
@@ -47,7 +52,7 @@ QmlWeb.AnchorsLayoutHandles = (() => {
       verticalCenter: "AnchorLine",
       fill: "Item",
       centerIn: "Item",
-			// don't use real, for init as undefined
+      // don't use real, for init as undefined
       margins: "var",
       leftMargin: "var",
       rightMargin: "var",
@@ -61,7 +66,8 @@ QmlWeb.AnchorsLayoutHandles = (() => {
     anchors.rightChanged.connect(self, exports.left_right_Changed);
     anchors.topChanged.connect(self, exports.top_bottom_Changed);
     anchors.bottomChanged.connect(self, exports.top_bottom_Changed);
-    anchors.horizontalCenterChanged.connect(self, exports.horizontalCenterChanged);
+    anchors.horizontalCenterChanged.connect(self,
+      exports.horizontalCenterChanged);
     anchors.verticalCenterChanged.connect(self, exports.verticalCenterChanged);
     anchors.fillChanged.connect(self, exports.fillChanged);
     anchors.centerInChanged.connect(self, exports.centerInChanged);
@@ -78,14 +84,12 @@ QmlWeb.AnchorsLayoutHandles = (() => {
         type: "real",
         setter(newVal) {
           this.val = isFinite(newVal) ? +newVal : 0;
-					// self.effect_anchors.left = this.val + (self.parent ? self.parent.left : 0)
         }
       },
       y: {
         type: "real",
         setter(newVal) {
           this.val = isFinite(newVal) ? +newVal : 0;
-					// self.effect_anchors.top = this.val + (self.parent ? self.parent.top : 0)
         }
       }
     });
@@ -94,20 +98,24 @@ QmlWeb.AnchorsLayoutHandles = (() => {
     ["width", "height", "x", "y"].forEach((key) => {
       const prop = self.$properties[key];
       QmlWeb.setupGetterSetter(effect_anchors, key,
-				() => prop.get(),
-				(newVal) => prop.set(newVal, QMLProperty.ReasonInner)
-			);
+        () => prop.get(),
+        (newVal) => prop.set(newVal, QmlWeb.QMLProperty.ReasonInner)
+      );
       const source_setter = prop.setter;
       QmlWeb.setupGetterSetter(effect_anchors, `$${key}$setter`,
-				() => prop.setter,
-				(handle) => prop.setter = handle || source_setter);
+        () => prop.setter,
+        (handle) => {
+          prop.setter = handle || source_setter;
+        });
       const source_getter = prop.getter;
       QmlWeb.setupGetterSetter(effect_anchors, `$${key}$getter`,
-				() => prop.getter,
-				(handle) => prop.getter = handle || source_getter);
+        () => prop.getter,
+        (handle) => {
+          prop.getter = handle || source_getter;
+        });
     });
 
-		// FOR store real value
+    // FOR store real value
     anchors_property_keys.forEach((key) => {
       if (/AnchorLine|var/.test(anchors_property[key])) {
         const binds = effect_anchors_binds[key];
@@ -117,14 +125,17 @@ QmlWeb.AnchorsLayoutHandles = (() => {
         effect_anchors[VALUE_KEY] = 0;
         let getter = () => {
           if (effect_anchors[GETTER_KEY]) {
-            return effect_anchors[VALUE_KEY] = effect_anchors[GETTER_KEY]();
-          } else {
-            return effect_anchors[VALUE_KEY];
+            effect_anchors[VALUE_KEY] = effect_anchors[GETTER_KEY]();
           }
+          return effect_anchors[VALUE_KEY];
         };
         if (key.indexOf("Margin") !== -1) {
           const base_getter = getter;
-          getter = () => anchors[key] === undefined ? effect_anchors.margins : base_getter();
+          getter = function() {
+            return anchors[key] === undefined ?
+              effect_anchors.margins :
+              base_getter();
+          };
         }
 
         QmlWeb.setupGetterSetter(effect_anchors, key, getter, (newVal) => {
@@ -135,24 +146,22 @@ QmlWeb.AnchorsLayoutHandles = (() => {
             } else {
               effect_anchors[VALUE_KEY] = newVal;
             }
-						// anchors.$properties[key].changed(newVal, oldVal, key);
-            for (var i = 0, bind_key; bind_key = binds[i]; i++) {
+            // anchors.$properties[key].changed(newVal, oldVal, key);
+            for (let i = 0, bind_key, len = binds.length; i < len; i++) {
+              bind_key = binds[i];
               const bindProp = self.$properties[bind_key];
               bindProp.changed(newVal, oldVal, key);
             }
           }
         });
         let _getter_getter_value;
-        QmlWeb.setupGetterSetter(effect_anchors, GETTER_KEY, () => _getter_getter_value, (v) => {
-          _getter_getter_value = v;
-        });
+        QmlWeb.setupGetterSetter(effect_anchors, GETTER_KEY,
+          () => _getter_getter_value,
+          (v) => {
+            _getter_getter_value = v;
+          });
       }
     });
-
-		// FOR getter
-    const readOnlySetter = function() {
-      throw new TypeError(`Cannot assign to read-only property "${this.name}"`);
-    };
 
     anchors_property_keys.forEach(key => {
       if (anchors_property[key] !== "AnchorLine") {
@@ -170,14 +179,16 @@ QmlWeb.AnchorsLayoutHandles = (() => {
           selfBindKeys.push("height");
           break;
         case "left":
-          getter = () => (self.parent ? self.parent.left : 0) + effect_anchors.x + effect_anchors.leftMargin;
+          getter = () => (self.parent ? self.parent.left : 0) +
+            effect_anchors.x + effect_anchors.leftMargin;
           break;
         case "right":
           getter = () => self.left + self.width + effect_anchors.rightMargin;
           selfBindKeys.push("width");
           break;
         case "top":
-          getter = () => (self.parent ? self.parent.top : 0) + effect_anchors.y + effect_anchors.topMargin;
+          getter = () => (self.parent ? self.parent.top : 0) +
+            effect_anchors.y + effect_anchors.topMargin;
           break;
         case "bottom":
           getter = () => self.top + self.height + effect_anchors.bottomMargin;
@@ -214,7 +225,7 @@ QmlWeb.AnchorsLayoutHandles = (() => {
         const fellow_keys = bind_info[1] || bind_info;
         const bindChanged = oldProps[bind_key].changed;
         fellow_keys.forEach(fellow_key =>
-					bindChanged.disconnect(props[fellow_key].changed));
+          bindChanged.disconnect(props[fellow_key].changed));
       });
     }
   }
@@ -228,21 +239,19 @@ QmlWeb.AnchorsLayoutHandles = (() => {
       const fellow_keys = bind_info[1] || bind_info;
       const bindChanged = newProps[bind_key].changed;
       fellow_keys.forEach(fellow_key =>
-				bindChanged.connect(self, props[fellow_key].changed, flags));
+        bindChanged.connect(self, props[fellow_key].changed, flags));
     });
   }
 
   const FILL_BIND_PROPS = [
-		["left"],
-		["x"],
-		["width"],
-		["top"],
-		["y"],
-		["height"],
+    ["left"],
+    ["x"],
+    ["width"],
+    ["top"],
+    ["y"],
+    ["height"],
   ];
   exports.fillChanged = function(newVal, oldVal) {
-    const props = this.$properties;
-    const anchors = this.anchors;
     const effect_anchors = this.effect_anchors;
     const lM = () => effect_anchors.leftMargin;
     const rM = () => effect_anchors.rightMargin;
@@ -277,14 +286,16 @@ QmlWeb.AnchorsLayoutHandles = (() => {
         "x",
         "height",
         "y",
-      ].forEach(key => u[key] = null);
+      ].forEach(key => {
+        u[key] = null;
+      });
     }
     this.$updateAnchorsGetter(u);
   };
 
   const CENTERIN_BIND_PROPS = [
-		["horizontalCenter", ["left", "x"]],
-		["verticalCenter", ["height", "y"]],
+    ["horizontalCenter", ["left", "x"]],
+    ["verticalCenter", ["height", "y"]],
   ];
   exports.centerInChanged = function(newVal, oldVal) {
     const anchors = this.anchors || this;
@@ -314,7 +325,9 @@ QmlWeb.AnchorsLayoutHandles = (() => {
       [
         "x",
         "y",
-      ].forEach(key => u[key] = null);
+      ].forEach(key => {
+        u[key] = null;
+      });
     }
     this.$updateAnchorsGetter(u);
   };
@@ -337,32 +350,31 @@ QmlWeb.AnchorsLayoutHandles = (() => {
     effect_anchors[name] = newVal;
     if (name === "left") {
       u.x = () => newVal - p_left();
-    } else { //right
-      if (!anchors.$properties.left.binding) {
-        u.x = () => newVal - this.width - p_left();
-        if (!anchors._only_right_binding) {
-          anchors._only_right_binding = (width) => {
-            console.log("zzzz", width);
-            this.xChanged(this.x, null, "x");
-          };
-          this.widthChanged.connect(this, anchors._only_right_binding);
-        }
-      } else if (anchors._only_right_binding) {
-        this.widthChanged.disconnect(anchors._only_right_binding);
-        anchors._only_right_binding = null;
+    } else //right
+    if (!anchors.$properties.left.binding) {
+      u.x = () => newVal - this.width - p_left();
+      if (!anchors._only_right_binding) {
+        anchors._only_right_binding = (width) => {
+          console.log("zzzz", width);
+          this.xChanged(this.x, null, "x");
+        };
+        this.widthChanged.connect(this, anchors._only_right_binding);
       }
-			// otherwise width force bind anchors and ignore old bind.
+    } else if (anchors._only_right_binding) {
+      this.widthChanged.disconnect(anchors._only_right_binding);
+      anchors._only_right_binding = null;
     }
-		// Lock/UnLock Width
+    // otherwise width force bind anchors and ignore old bind.
+    // Lock/UnLock Width
     const LOCK_KEY = "LOCK_width_BY_left_AND_right";
     const is_lock_width = isFinite(anchors.left) && isFinite(anchors.right);
     if (is_lock_width) {
       if (!anchors[LOCK_KEY]) {
         anchors[LOCK_KEY] = true;
         u.width = () => effect_anchors.right -
-					effect_anchors.left -
-					effect_anchors.leftMargin -
-					effect_anchors.rightMargin;
+          effect_anchors.left -
+          effect_anchors.leftMargin -
+          effect_anchors.rightMargin;
       }
     } else if (anchors[LOCK_KEY]) {
       anchors[LOCK_KEY] = false;
@@ -375,13 +387,14 @@ QmlWeb.AnchorsLayoutHandles = (() => {
   };
 
   const top_bottom_Changed_code = exports.left_right_Changed.toString()
-		.replace(/left/gi, "top")
-		.replace(/right/gi, "bottom")
-		.replace(/width/gi, "height")
-		.replace(/\.x/gi, ".y");
-  exports.top_bottom_Changed = Function(`return ${top_bottom_Changed_code}`)();
+    .replace(/left/gi, "top")
+    .replace(/right/gi, "bottom")
+    .replace(/width/gi, "height")
+    .replace(/\.x/gi, ".y");
 
-  exports.horizontalCenterChanged = function(newVal, oldVal, name) {
+  exports.top_bottom_Changed = Function(`return ${top_bottom_Changed_code}`)(); // eslint-disable-line  no-new-func, max-len
+
+  exports.horizontalCenterChanged = function() {
     const anchors = this.anchors || this;
     if (anchors.fill || anchors.centerIn) {
       return;
@@ -407,12 +420,13 @@ QmlWeb.AnchorsLayoutHandles = (() => {
       this.$updateAnchorsGetter(u);
     }
   };
-  const horizontalCenterChanged_code = exports.horizontalCenterChanged.toString()
-		.replace(/left/gi, "top")
-		.replace(/horizontalCenter/gi, "verticalCenter")
-		.replace(/width/gi, "height")
-		.replace(/\.x/gi, ".y");
-  exports.verticalCenterChanged = Function(`return ${horizontalCenterChanged_code}`)();
+  const horizontalCenterChanged_code = exports.horizontalCenterChanged
+    .toString()
+    .replace(/left/gi, "top")
+    .replace(/horizontalCenter/gi, "verticalCenter")
+    .replace(/width/gi, "height")
+    .replace(/\.x/gi, ".y");
+  exports.verticalCenterChanged = Function(`return ${horizontalCenterChanged_code}`)(); // eslint-disable-line  no-new-func, max-len
 
   exports.marginsChanged = function(newVal, oldVal, name) {
     const effect_anchors = this.effect_anchors;
@@ -424,11 +438,11 @@ QmlWeb.AnchorsLayoutHandles = (() => {
     const effect_anchors = this.effect_anchors;
     for (const key in u) {
       const getter = u[key];
-      const VALUE_KEY = `$${key}$value`;
+      // const VALUE_KEY = `$${key}$value`;
       const GETTER_KEY = `$${key}$getter`;
       const SETTER_KEY = `$${key}$setter`;
       effect_anchors[GETTER_KEY] =
-				effect_anchors[SETTER_KEY] = null;
+        effect_anchors[SETTER_KEY] = null;
 
       if (getter) {
         effect_anchors[key] = getter();

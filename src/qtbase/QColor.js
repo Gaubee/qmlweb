@@ -65,8 +65,10 @@ class QColor {
     return `#${argb.join("")}`;
   }
   get $number() {
-    if (this.$numberValue != undefined) return this.$numberValue;
-    this.$numberValue = (this.$r * 255 << 16) + (this.$g * 255 << 8) + this.$b * 255;
+    if (isFinite(this.$numberValue)) return this.$numberValue;
+    this.$numberValue = (this.$r * 255 << 16) +
+      (this.$g * 255 << 8) +
+      this.$b * 255;
     return this.$numberValue;
   }
   get $css() {

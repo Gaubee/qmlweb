@@ -293,23 +293,22 @@ class Rectangle extends QmlWeb.Graphics {
           // Only Draw Body
           applyDrawRoundedRectangle(drawFullArgs, graphics);
         }
-      } else { // Only Draw Rect
-        if (border_width) { // Draw Border And Body
-          if (border_width >= min_size / 2) { // Only Draw Border, No Body
-            border_graphics.drawRect(0, 0, width, height);
-          } else {
-            // Draw Border
-            drawRectangleBorder(border_graphics, width, height,
-              border_width
-            );
+      } else // Only Draw Rect
+      if (border_width) { // Draw Border And Body
+        if (border_width >= min_size / 2) { // Only Draw Border, No Body
+          border_graphics.drawRect(0, 0, width, height);
+        } else {
+          // Draw Border
+          drawRectangleBorder(border_graphics, width, height,
+            border_width
+          );
 
-            // Draw Body
-            graphics.drawRect(border_width, border_width,
-              width - double_border_width, height - double_border_width);
-          }
-        } else { // Only Draw Body
-          graphics.drawRect(0, 0, width, height);
+          // Draw Body
+          graphics.drawRect(border_width, border_width,
+            width - double_border_width, height - double_border_width);
         }
+      } else { // Only Draw Body
+        graphics.drawRect(0, 0, width, height);
       }
       border_graphics.endFill();
       graphics.endFill();
